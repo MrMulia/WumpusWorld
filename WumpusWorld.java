@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 /* ACO494: Foundations of Artificial Intelligence
 *  Project #1 Expert System
@@ -26,6 +27,7 @@ public class WumpusWorld {
     private static int[] agentPosition = new int[]{1, 1};  // Start the agent at position (1,1)
     private static int movementsMade = 0;
     private static boolean isAlive = true;
+    private static Map<String, Boolean> sensor = new HashMap<>();
 
     public static void main(String[] args) {
         String filePath = "testworld.txt"; // File path
@@ -48,24 +50,83 @@ public class WumpusWorld {
             setLegend("G", goldCoord);
         }
 
+        //Breeze?
+        for (int[] pitCoord : categoryMap.get("pit")) {
+            // Check up (above the pit)
+            if (pitCoord[0] > 1) {
+                int[] breezeUp = new int[]{pitCoord[0] - 1, pitCoord[1]};
+                setLegend("B", breezeUp);
+            }
+
+            // Check down (below the pit)
+            if (pitCoord[0] < GRID_SIZE_Y) {
+                int[] breezeDown = new int[]{pitCoord[0] + 1, pitCoord[1]};
+                setLegend("B", breezeDown);
+            }
+
+            // Check left (left of the pit)
+            if (pitCoord[1] > 1) {
+                int[] breezeLeft = new int[]{pitCoord[0], pitCoord[1] - 1};
+                setLegend("B", breezeLeft);
+            }
+
+            // Check right (right of the pit)
+            if (pitCoord[1] < GRID_SIZE_X) {
+                int[] breezeRight = new int[]{pitCoord[0], pitCoord[1] + 1};
+                setLegend("B", breezeRight);
+            }
+        }
+
         // Print the final grid with legends
         initializeAgent();
         printGrid();
-        moveAgent("right");
-        moveAgent("right");
-        moveAgent("right");
+        startAgent();
     }
 
-    private static void logicalProofs() {
-
+    private static String logicalProofs(String proof) {
+        return "aa";
     }
 
     private static void startAgent() {
+        Random rand = new Random();
         
+        for (int i = 0; i < 10; i++) {
+            int randDirection = rand.nextInt(4);
+
+        switch (randDirection) {
+            case 0:
+                System.out.println("Agent moves up");
+                moveAgent("up");
+                break;
+            case 1:
+                System.out.println("Agent moves down");
+                moveAgent("down");
+                break;
+            case 2:
+                System.out.println("Agent moves left");
+                moveAgent("left");
+                break;
+            case 3:
+                System.out.println("Agent moves right");
+                moveAgent("right");
+                break;
+            default:
+                System.out.println("Invalid direction");
+        }
+
+        // Adding a small delay to observe the movements (optional)
+        try {
+            Thread.sleep(1000);  // Pause for 1 second
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
     }
 
     private static void initializeAgent() {
         setLegend("A", agentPosition);
+        String a_sens = agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition)).toString();
+        System.out.println("Sensor: \n" + a_sens);
     }
 
     private static void moveAgent(String direction) {
@@ -99,19 +160,40 @@ public class WumpusWorld {
             default:
                 System.out.println("Invalid direction.\n");
         }
-        if (checkForWumpus(agentPosition)) {
+        if (sensor_Wumpus(agentPosition)) {
             System.out.println("The agent encountered The Wumpus!");
             isAlive = false;
         } else {
             setLegend("A", agentPosition);
         }
+
+        agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition));
+        System.out.println("Sensor: \n" + sensor);
         printGrid();
     }
 
-    private static boolean checkForWumpus(int[] position) {
+    private static Map<String, Boolean> agentSensor(boolean checkForWumpus, boolean checkForPit) {
+        boolean sensor_Wumpus = checkForWumpus;
+        boolean sensor_Pit = checkForPit;
+        sensor.put("sensor_Wumpus", sensor_Wumpus);
+        sensor.put("sensor_Pit", sensor_Pit);
+        return sensor;
+    }
+
+    private static boolean sensor_Wumpus(int[] position) {
         ArrayList<int[]> wumpusCoordinate = categoryMap.get("wumpus");
         for (int[] wumpusCoord : wumpusCoordinate) {
             if (Arrays.equals(position, wumpusCoord)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean sensor_Pit(int[] position) {
+        ArrayList<int[]> pitCoordinate = categoryMap.get("pit");
+        for (int[] pitCoord : pitCoordinate) {
+            if (Arrays.equals(position, pitCoord)) {
                 return true;
             }
         }
