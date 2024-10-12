@@ -19,116 +19,97 @@ import java.util.Random;
 
 public class WumpusWorld {
 
-    // HashMap to store categories and their corresponding lists of coordinates as int[] (x, y).
     private static Map<String, ArrayList<int[]>> categoryMap = new HashMap<>();
     private static final int GRID_SIZE_X = 4;
     private static final int GRID_SIZE_Y = 4;
-    private static ArrayList<ArrayList<String>> grid;  // Change to store String
-    private static int[] agentPosition = new int[]{1, 1};  // Start the agent at position (1,1)
+    private static ArrayList<ArrayList<String>> grid;
+    private static ArrayList<ArrayList<String>> originalGrid;  // Stores the original state of the grid
+    private static int[] agentPosition = new int[]{1, 1};
     private static int movementsMade = 0;
     private static boolean isAlive = true;
     private static Map<String, Boolean> sensor = new HashMap<>();
 
     public static void main(String[] args) {
-        String filePath = "testworld.txt"; // File path
+        String filePath = "testworld.txt";
 
-        // Parse the file and fill categoryMap
         parseFile(filePath);
-        
         printWorldInformation();
-
         initializeGrid();
 
         // Set legends from the parsed data
-        for (int[] wumpusCoord : categoryMap.get("wumpus")) {
-            setLegend("W", wumpusCoord);
-        }
-        for (int[] pitCoord : categoryMap.get("pit")) {
-            setLegend("P", pitCoord);
-        }
-        for (int[] goldCoord : categoryMap.get("gold")) {
-            setLegend("G", goldCoord);
-        }
+        setEnvironment();
+        saveOriginalGrid();
 
-        //Breeze?
-        for (int[] pitCoord : categoryMap.get("pit")) {
-            // Check up (above the pit)
-            if (pitCoord[0] > 1) {
-                int[] breezeUp = new int[]{pitCoord[0] - 1, pitCoord[1]};
-                setLegend("B", breezeUp);
-            }
-
-            // Check down (below the pit)
-            if (pitCoord[0] < GRID_SIZE_Y) {
-                int[] breezeDown = new int[]{pitCoord[0] + 1, pitCoord[1]};
-                setLegend("B", breezeDown);
-            }
-
-            // Check left (left of the pit)
-            if (pitCoord[1] > 1) {
-                int[] breezeLeft = new int[]{pitCoord[0], pitCoord[1] - 1};
-                setLegend("B", breezeLeft);
-            }
-
-            // Check right (right of the pit)
-            if (pitCoord[1] < GRID_SIZE_X) {
-                int[] breezeRight = new int[]{pitCoord[0], pitCoord[1] + 1};
-                setLegend("B", breezeRight);
-            }
-        }
-
-        // Print the final grid with legends
         initializeAgent();
         printGrid();
+        KB();
+        System.out.println();
         startAgent_random();
     }
 
-    private static String logicalProofs(String proof) {
-        return "aa";
+    private static void KB() {
+        int x = GRID_SIZE_X;
+        int y = GRID_SIZE_Y;
+        int[] safePlace = new int[]{1, 1};
+
+        String KB = x + "\n" + y + "\n" + Arrays.toString(safePlace) + "\n";
+        System.out.println(KB);
     }
 
     private static void startAgent_random() {
         Random rand = new Random();
-        
         for (int i = 0; i < 10; i++) {
             int randDirection = rand.nextInt(4);
 
-        if (!isAlive) {
-            return;
-        }
-        switch (randDirection) {
-            case 0:
-                System.out.println("Agent moves up");
-                moveAgent("up");
-                break;
-            case 1:
-                System.out.println("Agent moves down");
-                moveAgent("down");
-                break;
-            case 2:
-                System.out.println("Agent moves left");
-                moveAgent("left");
-                break;
-            case 3:
-                System.out.println("Agent moves right");
-                moveAgent("right");
-                break;
-            default:
-                System.out.println("Invalid direction");
-        }
+            if (!isAlive) return;
+            
+            switch (randDirection) {
+                case 0: System.out.println("Agent moves up"); 
+                        moveAgent("up"); 
+                        testLogicalProofs(); 
+                        break;
+                case 1: System.out.println("Agent moves down"); 
+                        moveAgent("down"); 
+                        testLogicalProofs(); 
+                        break;
+                case 2: System.out.println("Agent moves left"); 
+                        moveAgent("left"); 
+                        testLogicalProofs();
+                        break;
+                case 3: System.out.println("Agent moves right"); 
+                        moveAgent("right"); 
+                        testLogicalProofs();
+                        break;
+                default: System.out.println("Invalid direction");
+            }
 
-        try {
-            Thread.sleep(1000);  // Pause for 1 second
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            try {
+                Thread.sleep(1000);  // Pause for 1 second
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
+
+    private static void testLogicalProofs() {
+        if (isAlive) {
+            if (logicalProof_breezeImpliesPit(sensor_Breeze(agentPosition))) {
+                System.out.println("Logical Conclusion: Breeze detected, there must be a pit nearby.\n");
+            } else {
+                System.out.println("Logical Conclusion: No breeze detected, no nearby pit.\n");
+            }
+        } else {
+            System.out.println("Agent is dead.");
+        }
+    }
+
+    private static boolean logicalProof_breezeImpliesPit(boolean breezeDetected) {
+        return breezeDetected;
     }
 
     private static void initializeAgent() {
         setLegend("A", agentPosition);
-        String a_sens = agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition)).toString();
-        System.out.println("Sensor: \n" + a_sens);
+        System.out.println("Sensor: \n" + agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition), sensor_Breeze(agentPosition)));
     }
 
     private static Boolean agent_state() {
@@ -149,29 +130,29 @@ public class WumpusWorld {
         }
 
         switch (direction.toLowerCase()) {
-            case "up":
-                if (agentPosition[0] > 1) {
-                    agentPosition[0] --;
-                }
-                break;
-            case ("down"):
-                if (agentPosition[0] < GRID_SIZE_Y) {
-                    agentPosition[0] ++;
-                }
-                break;
-            case ("left"):
-                if (agentPosition[1] > 1) {
-                    agentPosition[1] --;
-                }
-                break;
-            case ("right"):
-                if (agentPosition[1] < GRID_SIZE_X) {
-                    agentPosition[1] ++;
-                }
-                break;
-            default:
-                System.out.println("Invalid direction.\n");
+            case "up": 
+                if (agentPosition[0] > 1) 
+                    agentPosition[0]--; 
+                    break;
+            case "down": 
+                if (agentPosition[0] < GRID_SIZE_Y) 
+                    agentPosition[0]++; 
+                    break;
+            case "left": 
+                    if (agentPosition[1] > 1) 
+                    agentPosition[1]--; 
+                    break;
+            case "right": 
+                    if (agentPosition[1] < GRID_SIZE_X) 
+                    agentPosition[1]++; 
+                    break;
+            default: 
+                    System.out.println("Invalid direction.\n");
         }
+
+        agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition), sensor_Breeze(agentPosition));
+        System.out.println("Sensor: \n" + sensor);
+
         if (sensor_Wumpus(agentPosition)) {
             System.out.println("The agent encountered The Wumpus!");
             agent_dead();
@@ -185,16 +166,28 @@ public class WumpusWorld {
         } else {
             setLegend("A", agentPosition);
         }
-        agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition));
-        System.out.println("Sensor: \n" + sensor);
+
         printGrid();
     }
 
-    private static Map<String, Boolean> agentSensor(boolean checkForWumpus, boolean checkForPit) {
+    private static boolean sensor_Breeze(int[] position) {
+        ArrayList<int[]> pitCoordinates = categoryMap.get("pit");
+        for (int[] pitCoord : pitCoordinates) {
+            if ((Math.abs(pitCoord[0] - position[0]) == 1 && pitCoord[1] == position[1]) || 
+                (Math.abs(pitCoord[1] - position[1]) == 1 && pitCoord[0] == position[0])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Map<String, Boolean> agentSensor(boolean checkForWumpus, boolean checkForPit, boolean checkForBreeze) {
         boolean sensor_Wumpus = checkForWumpus;
         boolean sensor_Pit = checkForPit;
+        boolean sensor_Breeze = checkForBreeze;
         sensor.put("sensor_Wumpus", sensor_Wumpus);
         sensor.put("sensor_Pit", sensor_Pit);
+        sensor.put("sensor_Breeze", sensor_Breeze);
         return sensor;
     }
 
@@ -218,10 +211,22 @@ public class WumpusWorld {
         return false;
     }
 
+    // Clear position and restore original environment markers
     private static void clearPosition(int[] position) {
         int x = position[0] - 1;
         int y = position[1] - 1;
-        grid.get(x).set(y, "((" + position[0] + "," + position[1] + ") E)");  // Reset to empty
+
+        // Restore the original state from the originalGrid
+        grid.get(x).set(y, originalGrid.get(x).get(y));
+    }
+
+    // Save the original grid state for restoration later
+    private static void saveOriginalGrid() {
+        originalGrid = new ArrayList<>();
+        for (ArrayList<String> row : grid) {
+            ArrayList<String> originalRow = new ArrayList<>(row);
+            originalGrid.add(originalRow);
+        }
     }
 
     private static void printWorldInformation() {
@@ -247,19 +252,17 @@ public class WumpusWorld {
         System.out.println("\n##################################\n");
     }
 
-    // Initialize the grid with coordinates and default "E" for empty
     private static void initializeGrid() {
         grid = new ArrayList<>();
         for (int i = 1; i <= GRID_SIZE_X; i++) {
             ArrayList<String> row = new ArrayList<>();
             for (int j = 1; j <= GRID_SIZE_Y; j++) {
-                row.add("((" + i + "," + j + ") E)");  // Initialize with coordinates and "E" for empty
+                row.add("((" + i + "," + j + ") E)");  
             }
             grid.add(row);
         }
     }
 
-    // Print the grid
     private static void printGrid() {
         for (ArrayList<String> row : grid) {
             for (String cell : row) {
@@ -267,28 +270,56 @@ public class WumpusWorld {
             }
             System.out.println();
         }
-        System.out.println("movementsMade:" + movementsMade + "\n");
+        System.out.println("movementsMade:" + movementsMade);
         movementsMade++;
     }
 
-    // Set a legend (item) at the given coordinate
     private static void setLegend(String item, int[] coordinate) {
-        int x = coordinate[0] - 1;  // Adjust for zero-based index
+        int x = coordinate[0] - 1;
         int y = coordinate[1] - 1;
-        grid.get(x).set(y, "((" + coordinate[0] + "," + coordinate[1] + ") " + item + ")");  // Set the item in the grid
+        grid.get(x).set(y, "((" + coordinate[0] + "," + coordinate[1] + ") " + item + ")");
     }
 
-    // Parse the file and fill the HashMap
+    private static void setEnvironment() {
+        for (int[] wumpusCoord : categoryMap.get("wumpus")) {
+            setLegend("W", wumpusCoord);
+        }
+
+        for (int[] pitCoord : categoryMap.get("wumpus")) {
+            if (pitCoord[0] > 1) 
+                setLegend("S", new int[]{pitCoord[0] - 1, pitCoord[1]});
+            if (pitCoord[0] < GRID_SIZE_Y) 
+                setLegend("S", new int[]{pitCoord[0] + 1, pitCoord[1]});
+            if (pitCoord[1] > 1) 
+                setLegend("S", new int[]{pitCoord[0], pitCoord[1] - 1});
+            if (pitCoord[1] < GRID_SIZE_X) 
+                setLegend("S", new int[]{pitCoord[0], pitCoord[1] + 1});
+        }
+
+        for (int[] pitCoord : categoryMap.get("pit")) {
+            setLegend("P", pitCoord);
+        }
+
+        for (int[] pitCoord : categoryMap.get("pit")) {
+            if (pitCoord[0] > 1) 
+                setLegend("B", new int[]{pitCoord[0] - 1, pitCoord[1]});
+            if (pitCoord[0] < GRID_SIZE_Y) 
+                setLegend("B", new int[]{pitCoord[0] + 1, pitCoord[1]});
+            if (pitCoord[1] > 1) 
+                setLegend("B", new int[]{pitCoord[0], pitCoord[1] - 1});
+            if (pitCoord[1] < GRID_SIZE_X) 
+                setLegend("B", new int[]{pitCoord[0], pitCoord[1] + 1});
+        }
+    }
+
     private static void parseFile(String filePath) {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = br.readLine()) != null) {
-                // Split each line into parts (category and coordinates)
                 String[] parts = line.split(" ");
                 String category = parts[0];
                 int[] coordinates = new int[]{Integer.parseInt(parts[1]), Integer.parseInt(parts[2])};
 
-                // Add coordinates to the respective category list
                 categoryMap.putIfAbsent(category, new ArrayList<>());
                 categoryMap.get(category).add(coordinates);
             }
@@ -297,16 +328,14 @@ public class WumpusWorld {
         }
     }
 
-    // Get coordinates for a given category and index
     private static int[] getCoordinate(String category, int index) {
         if (categoryMap.containsKey(category) && index < categoryMap.get(category).size()) {
             return categoryMap.get(category).get(index);
         } else {
-            return new int[]{-1, -1}; // Return an invalid coordinate if not found
+            return new int[]{-1, -1};
         }
     }
 
-    // Print all coordinates for a specific category
     private static void printAllCoordinates(String category) {
         if (categoryMap.containsKey(category)) {
             System.out.print(category + ": ");
