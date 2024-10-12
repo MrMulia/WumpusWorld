@@ -28,11 +28,14 @@ public class WumpusWorld {
     private static int movementsMade = 0;
     private static boolean isAlive = true;
     private static Map<String, Boolean> sensor = new HashMap<>();
+    private static Map<int[], String> comb = new HashMap<>();
 
     public static void main(String[] args) {
         String filePath = "testworld.txt";
+        String filePath2 = "testworld2.txt";
+        String filePath3 = "testworld3.txt";
 
-        parseFile(filePath);
+        parseFile(filePath2);
         printWorldInformation();
         initializeGrid();
 
@@ -58,31 +61,41 @@ public class WumpusWorld {
 
     private static void startAgent_random() {
         Random rand = new Random();
-        for (int i = 0; i < 10; i++) {
+        int validMoves = 0;  // Track valid moves only
+        
+        while (validMoves < 10) {
             int randDirection = rand.nextInt(4);
-
-            if (!isAlive) return;
-            
+    
+            if (!isAlive) return;  // Stop if the agent is dead
+    
+            boolean moved = false;  // Flag to check if the agent successfully moved
+    
             switch (randDirection) {
-                case 0: System.out.println("Agent moves up"); 
-                        moveAgent("up"); 
-                        testLogicalProofs(); 
-                        break;
-                case 1: System.out.println("Agent moves down"); 
-                        moveAgent("down"); 
-                        testLogicalProofs(); 
-                        break;
-                case 2: System.out.println("Agent moves left"); 
-                        moveAgent("left"); 
-                        testLogicalProofs();
-                        break;
-                case 3: System.out.println("Agent moves right"); 
-                        moveAgent("right"); 
-                        testLogicalProofs();
-                        break;
-                default: System.out.println("Invalid direction");
+                case 0: 
+                    System.out.println("Agent moves up"); 
+                    moved = moveAgent("up");  // Returns true if the agent moves
+                    break;
+                case 1: 
+                    System.out.println("Agent moves down"); 
+                    moved = moveAgent("down"); 
+                    break;
+                case 2: 
+                    System.out.println("Agent moves left"); 
+                    moved = moveAgent("left"); 
+                    break;
+                case 3: 
+                    System.out.println("Agent moves right"); 
+                    moved = moveAgent("right"); 
+                    break;
+                default: 
+                    System.out.println("Invalid direction");
             }
-
+    
+            if (moved) {  // Only count valid moves
+                validMoves++;
+                testLogicalProofs();  // Run tests after each valid move
+            }
+    
             try {
                 Thread.sleep(1000);  // Pause for 1 second
             } catch (InterruptedException e) {
@@ -98,6 +111,11 @@ public class WumpusWorld {
             } else {
                 System.out.println("Logical Conclusion: No breeze detected, no nearby pit.\n");
             }
+            if (logicalProof_stenchImpliesWumpus(sensor_Stench(agentPosition))) {
+                System.out.println("Logical Conclusion: Stench detected, there must be a Wumpus nearby.\n");
+            } else {
+                System.out.println("Logical Conclusion: No stench detected, no nearby Wumpus.\n");
+            }
         } else {
             System.out.println("Agent is dead.");
         }
@@ -105,6 +123,10 @@ public class WumpusWorld {
 
     private static boolean logicalProof_breezeImpliesPit(boolean breezeDetected) {
         return breezeDetected;
+    }
+
+    private static boolean logicalProof_stenchImpliesWumpus(boolean stenchDetected) {
+        return stenchDetected;
     }
 
     private static void initializeAgent() {
@@ -121,53 +143,123 @@ public class WumpusWorld {
         return isAlive;
     }
 
-    private static void moveAgent(String direction) {
-        clearPosition(agentPosition);
-
+    private static boolean moveAgent(String direction) {
+        clearPosition(agentPosition);  // Clear current agent position from the grid
+    
         if (!isAlive) {
             System.out.println("Agent is dead, no more moves!");
-            return;
+            return false;  // No move made if the agent is dead
         }
-
+    
+        // Track the original position before the move
+        int originalX = agentPosition[0];
+        int originalY = agentPosition[1];
+    
+        // Move the agent based on the direction
         switch (direction.toLowerCase()) {
             case "up": 
-                if (agentPosition[0] > 1) 
+                if (agentPosition[0] > 1) {
                     agentPosition[0]--; 
-                    break;
+                } else {
+                    System.out.println("Agent can't move up, it's at the top boundary!\n");
+                    return false;  // Invalid move
+                }
+                break;
             case "down": 
-                if (agentPosition[0] < GRID_SIZE_Y) 
+                if (agentPosition[0] < GRID_SIZE_Y) {
                     agentPosition[0]++; 
-                    break;
+                } else {
+                    System.out.println("Agent can't move down, it's at the bottom boundary!\n");
+                    return false;  // Invalid move
+                }
+                break;
             case "left": 
-                    if (agentPosition[1] > 1) 
+                if (agentPosition[1] > 1) {
                     agentPosition[1]--; 
-                    break;
+                } else {
+                    System.out.println("Agent can't move left, it's at the left boundary!\n");
+                    return false;  // Invalid move
+                }
+                break;
             case "right": 
-                    if (agentPosition[1] < GRID_SIZE_X) 
+                if (agentPosition[1] < GRID_SIZE_X) {
                     agentPosition[1]++; 
-                    break;
+                } else {
+                    System.out.println("Agent can't move right, it's at the right boundary!\n");
+                    return false;  // Invalid move
+                }
+                break;
             default: 
-                    System.out.println("Invalid direction.\n");
+                System.out.println("Invalid direction.\n");
+                return false;  // Invalid direction
         }
-
+    
+        // If the agent's position did not change due to boundaries, skip the rest of the method
+        if (agentPosition[0] == originalX && agentPosition[1] == originalY) {
+            setLegend("A", agentPosition);  // Re-add the agent to its original position
+            return false;  // No move made
+        }
+    
+        // Update the sensor values for the new position
         agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition), sensor_Breeze(agentPosition));
         System.out.println("Sensor: \n" + sensor);
-
+    
+        // Check if agent encountered Wumpus or Pit
         if (sensor_Wumpus(agentPosition)) {
             System.out.println("The agent encountered The Wumpus!");
+            setLegend("A", agentPosition);  // Mark the position with Wumpus killed Agent
             agent_dead();
-        } else {
-            setLegend("A", agentPosition);
+            printGrid();
+            return true;  // A move was made, but the agent is now dead
         }
-
+    
         if (sensor_Pit(agentPosition)) {
             System.out.println("The agent fell into an Endless Pit!");
+            setLegend("A", agentPosition);  // Mark the position with Pit killed Agent
             agent_dead();
-        } else {
-            setLegend("A", agentPosition);
+            printGrid();
+            return true;  // A move was made, but the agent is now dead
         }
+    
+        // Place the agent in the new position, if still alive
+        if (isAlive) {
+            setLegend("A", agentPosition);  // Add agent to the new position
+        }
+    
+        printGrid();  // Print the updated grid
+        return true;  // A valid move was made
+    }
+    
 
-        printGrid();
+    private static boolean sensor_Wumpus(int[] position) {
+        ArrayList<int[]> wumpusCoordinate = categoryMap.get("wumpus");
+        for (int[] wumpusCoord : wumpusCoordinate) {
+            if (Arrays.equals(position, wumpusCoord)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean sensor_Pit(int[] position) {
+        ArrayList<int[]> pitCoordinate = categoryMap.get("pit");
+        for (int[] pitCoord : pitCoordinate) {
+            if (Arrays.equals(position, pitCoord)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean sensor_Stench(int[] position) {
+        ArrayList<int[]> wumpusCoordinates = categoryMap.get("wumpus");
+        for (int[] wumpusCoord : wumpusCoordinates) {
+            if ((Math.abs(wumpusCoord[0] - position[0]) == 1 && wumpusCoord[1] == position[1]) || 
+                (Math.abs(wumpusCoord[1] - position[1]) == 1 && wumpusCoord[0] == position[0])) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean sensor_Breeze(int[] position) {
@@ -189,26 +281,6 @@ public class WumpusWorld {
         sensor.put("sensor_Pit", sensor_Pit);
         sensor.put("sensor_Breeze", sensor_Breeze);
         return sensor;
-    }
-
-    private static boolean sensor_Wumpus(int[] position) {
-        ArrayList<int[]> wumpusCoordinate = categoryMap.get("wumpus");
-        for (int[] wumpusCoord : wumpusCoordinate) {
-            if (Arrays.equals(position, wumpusCoord)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean sensor_Pit(int[] position) {
-        ArrayList<int[]> pitCoordinate = categoryMap.get("pit");
-        for (int[] pitCoord : pitCoordinate) {
-            if (Arrays.equals(position, pitCoord)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     // Clear position and restore original environment markers
@@ -277,12 +349,32 @@ public class WumpusWorld {
     private static void setLegend(String item, int[] coordinate) {
         int x = coordinate[0] - 1;
         int y = coordinate[1] - 1;
-        grid.get(x).set(y, "((" + coordinate[0] + "," + coordinate[1] + ") " + item + ")");
+        
+        // Fetch the current items at the coordinate if any
+        String currentLegend = grid.get(x).get(y);
+        
+        // If the room is empty (no legend set yet), initialize it with the current item
+        if (currentLegend.contains("E")) {
+            grid.get(x).set(y, "((" + coordinate[0] + "," + coordinate[1] + ") [" + item + "])");
+        } else {
+            // If there are already items in the room, append the new item
+            String newLegend = currentLegend.replace("])", "," + item + "])"); // Replace closing brackets with new item
+            grid.get(x).set(y, newLegend);
+        }
     }
+    
 
     private static void setEnvironment() {
         for (int[] wumpusCoord : categoryMap.get("wumpus")) {
             setLegend("W", wumpusCoord);
+        }
+
+        for (int[] goldCoord : categoryMap.get("gold")) {
+            setLegend("G", goldCoord);
+        }
+
+        for (int[] goldCoord : categoryMap.get("gold")) {
+            setLegend("Gl", goldCoord);
         }
 
         for (int[] pitCoord : categoryMap.get("wumpus")) {
