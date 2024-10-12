@@ -80,19 +80,22 @@ public class WumpusWorld {
         // Print the final grid with legends
         initializeAgent();
         printGrid();
-        startAgent();
+        startAgent_random();
     }
 
     private static String logicalProofs(String proof) {
         return "aa";
     }
 
-    private static void startAgent() {
+    private static void startAgent_random() {
         Random rand = new Random();
         
         for (int i = 0; i < 10; i++) {
             int randDirection = rand.nextInt(4);
 
+        if (!isAlive) {
+            return;
+        }
         switch (randDirection) {
             case 0:
                 System.out.println("Agent moves up");
@@ -114,7 +117,6 @@ public class WumpusWorld {
                 System.out.println("Invalid direction");
         }
 
-        // Adding a small delay to observe the movements (optional)
         try {
             Thread.sleep(1000);  // Pause for 1 second
         } catch (InterruptedException e) {
@@ -129,13 +131,23 @@ public class WumpusWorld {
         System.out.println("Sensor: \n" + a_sens);
     }
 
+    private static Boolean agent_state() {
+        return isAlive;
+    }
+
+    private static Boolean agent_dead() {
+        isAlive = false;
+        return isAlive;
+    }
+
     private static void moveAgent(String direction) {
+        clearPosition(agentPosition);
+
         if (!isAlive) {
             System.out.println("Agent is dead, no more moves!");
             return;
         }
 
-        clearPosition(agentPosition);
         switch (direction.toLowerCase()) {
             case "up":
                 if (agentPosition[0] > 1) {
@@ -162,11 +174,17 @@ public class WumpusWorld {
         }
         if (sensor_Wumpus(agentPosition)) {
             System.out.println("The agent encountered The Wumpus!");
-            isAlive = false;
+            agent_dead();
         } else {
             setLegend("A", agentPosition);
         }
 
+        if (sensor_Pit(agentPosition)) {
+            System.out.println("The agent fell into an Endless Pit!");
+            agent_dead();
+        } else {
+            setLegend("A", agentPosition);
+        }
         agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition));
         System.out.println("Sensor: \n" + sensor);
         printGrid();
