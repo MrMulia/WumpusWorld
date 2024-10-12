@@ -25,6 +25,7 @@ public class WumpusWorld {
     private static ArrayList<ArrayList<String>> grid;  // Change to store String
     private static int[] agentPosition = new int[]{1, 1};  // Start the agent at position (1,1)
     private static int movementsMade = 0;
+    private static boolean isAlive = true;
 
     public static void main(String[] args) {
         String filePath = "testworld.txt"; // File path
@@ -51,7 +52,12 @@ public class WumpusWorld {
         initializeAgent();
         printGrid();
         moveAgent("right");
-        moveAgent("down");
+        moveAgent("right");
+        moveAgent("right");
+    }
+
+    private static void logicalProofs() {
+
     }
 
     private static void startAgent() {
@@ -63,6 +69,11 @@ public class WumpusWorld {
     }
 
     private static void moveAgent(String direction) {
+        if (!isAlive) {
+            System.out.println("Agent is dead, no more moves!");
+            return;
+        }
+
         clearPosition(agentPosition);
         switch (direction.toLowerCase()) {
             case "up":
@@ -88,8 +99,23 @@ public class WumpusWorld {
             default:
                 System.out.println("Invalid direction.\n");
         }
-        setLegend("A", agentPosition);
+        if (checkForWumpus(agentPosition)) {
+            System.out.println("The agent encountered The Wumpus!");
+            isAlive = false;
+        } else {
+            setLegend("A", agentPosition);
+        }
         printGrid();
+    }
+
+    private static boolean checkForWumpus(int[] position) {
+        ArrayList<int[]> wumpusCoordinate = categoryMap.get("wumpus");
+        for (int[] wumpusCoord : wumpusCoordinate) {
+            if (Arrays.equals(position, wumpusCoord)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void clearPosition(int[] position) {
