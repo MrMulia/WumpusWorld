@@ -29,6 +29,7 @@ public class WumpusWorld {
     private static boolean isAlive = true;
     private static Map<String, Boolean> sensor = new HashMap<>();
     private static Map<int[], String> comb = new HashMap<>();
+    private static boolean won = false;
 
     public static void main(String[] args) {
         String filePath = "testworld.txt";
@@ -94,6 +95,11 @@ public class WumpusWorld {
             if (moved) {  // Only count valid moves
                 validMoves++;
                 testLogicalProofs();  // Run tests after each valid move
+            }
+
+            if (won) {
+                System.out.println("Agent achieved its objective.");
+                break;
             }
     
             try {
@@ -220,6 +226,15 @@ public class WumpusWorld {
             printGrid();
             return true;  // A move was made, but the agent is now dead
         }
+
+        if (sensor_Gold(agentPosition)) {
+            System.out.println("The agent found the Gold! Glittery room, and objective achieved!");
+            setLegend("A", agentPosition);  // Add agent to the new position
+            setLegend("Gl", agentPosition);  // Add glitter to the room
+            printGrid();  // Print the updated grid
+            won = true;
+            return true;  // The objective is achieved, agent can stop further exploration
+        }
     
         // Place the agent in the new position, if still alive
         if (isAlive) {
@@ -272,6 +287,17 @@ public class WumpusWorld {
         }
         return false;
     }
+
+    private static boolean sensor_Gold(int[] position) {
+        ArrayList<int[]> goldCoordinates = categoryMap.get("gold");
+        for (int[] goldCoord : goldCoordinates) {
+            if (Arrays.equals(position, goldCoord)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
 
     private static Map<String, Boolean> agentSensor(boolean checkForWumpus, boolean checkForPit, boolean checkForBreeze) {
         boolean sensor_Wumpus = checkForWumpus;
