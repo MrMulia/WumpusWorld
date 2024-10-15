@@ -168,7 +168,6 @@ public class WumpusWorld {
         switch (direction.toLowerCase()) {
             case "up": 
                 if (agentPosition[0] > 1) {
-                    setLegend("T", agentPosition);
                     agentPosition[0]--; 
                 } else {
                     System.out.println("Agent can't move up, it's at the top boundary!\n");
@@ -177,7 +176,6 @@ public class WumpusWorld {
                 break;
             case "down": 
                 if (agentPosition[0] < GRID_SIZE_Y) {
-                    setLegend("T", agentPosition);
                     agentPosition[0]++; 
                 } else {
                     System.out.println("Agent can't move down, it's at the bottom boundary!\n");
@@ -186,7 +184,6 @@ public class WumpusWorld {
                 break;
             case "left": 
                 if (agentPosition[1] > 1) {
-                    setLegend("T", agentPosition);
                     agentPosition[1]--; 
                 } else {
                     System.out.println("Agent can't move left, it's at the left boundary!\n");
@@ -195,7 +192,6 @@ public class WumpusWorld {
                 break;
             case "right": 
                 if (agentPosition[1] < GRID_SIZE_X) {
-                    setLegend("T", agentPosition);
                     agentPosition[1]++; 
                 } else {
                     System.out.println("Agent can't move right, it's at the right boundary!\n");
@@ -406,9 +402,6 @@ public class WumpusWorld {
         if (currentLegend.contains("E")) {
             grid.get(x).set(y, "((" + coordinate[0] + "," + coordinate[1] + ") [" + item + "])");
         } 
-        else if (currentLegend.contains("T") && item.equals("T")){
-            return;
-        }
         else {
             // If there are already items in the room, append the new item
             String newLegend = currentLegend.replace("])", "," + item + "])"); // Replace closing brackets with new item
