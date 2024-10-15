@@ -30,13 +30,14 @@ public class WumpusWorld {
     private static Map<String, Boolean> sensor = new HashMap<>();
     private static Map<int[], String> comb = new HashMap<>();
     private static boolean won = false;
+    private static ArrayList<int[]> agentMap = new ArrayList<>(); //The agent's map that they use to keep track of spaces that they previously traveled to
 
     public static void main(String[] args) {
         String filePath = "testworld.txt";
         String filePath2 = "testworld2.txt";
         String filePath3 = "testworld3.txt";
 
-        parseFile(filePath2);
+        parseFile(filePath3);
         printWorldInformation();
         initializeGrid();
 
@@ -63,7 +64,8 @@ public class WumpusWorld {
     private static void startAgent_random() {
         Random rand = new Random();
         int validMoves = 0;  // Track valid moves only
-        
+        addToAgentMap(agentPosition.clone());
+
         while (validMoves < 10) {
             int randDirection = rand.nextInt(4);
     
@@ -151,7 +153,8 @@ public class WumpusWorld {
 
     private static boolean moveAgent(String direction) {
         clearPosition(agentPosition);  // Clear current agent position from the grid
-    
+        printAgentMap();
+
         if (!isAlive) {
             System.out.println("Agent is dead, no more moves!");
             return false;  // No move made if the agent is dead
@@ -165,6 +168,7 @@ public class WumpusWorld {
         switch (direction.toLowerCase()) {
             case "up": 
                 if (agentPosition[0] > 1) {
+                    setLegend("T", agentPosition);
                     agentPosition[0]--; 
                 } else {
                     System.out.println("Agent can't move up, it's at the top boundary!\n");
@@ -173,6 +177,7 @@ public class WumpusWorld {
                 break;
             case "down": 
                 if (agentPosition[0] < GRID_SIZE_Y) {
+                    setLegend("T", agentPosition);
                     agentPosition[0]++; 
                 } else {
                     System.out.println("Agent can't move down, it's at the bottom boundary!\n");
@@ -181,6 +186,7 @@ public class WumpusWorld {
                 break;
             case "left": 
                 if (agentPosition[1] > 1) {
+                    setLegend("T", agentPosition);
                     agentPosition[1]--; 
                 } else {
                     System.out.println("Agent can't move left, it's at the left boundary!\n");
@@ -189,6 +195,7 @@ public class WumpusWorld {
                 break;
             case "right": 
                 if (agentPosition[1] < GRID_SIZE_X) {
+                    setLegend("T", agentPosition);
                     agentPosition[1]++; 
                 } else {
                     System.out.println("Agent can't move right, it's at the right boundary!\n");
@@ -199,7 +206,7 @@ public class WumpusWorld {
                 System.out.println("Invalid direction.\n");
                 return false;  // Invalid direction
         }
-    
+        addToAgentMap(agentPosition.clone());
         // If the agent's position did not change due to boundaries, skip the rest of the method
         if (agentPosition[0] == originalX && agentPosition[1] == originalY) {
             setLegend("A", agentPosition);  // Re-add the agent to its original position
@@ -297,7 +304,6 @@ public class WumpusWorld {
         }
         return false;
     }
-    
 
     private static Map<String, Boolean> agentSensor(boolean checkForWumpus, boolean checkForPit, boolean checkForBreeze) {
         boolean sensor_Wumpus = checkForWumpus;
@@ -361,6 +367,23 @@ public class WumpusWorld {
         }
     }
 
+    private static void addToAgentMap(int[] location) {
+        for (int[] space : agentMap){
+            if (Arrays.equals(location, space)){
+                return;
+            }
+        }
+        agentMap.add(location.clone());
+    }
+
+    private static void printAgentMap() {
+        System.out.print("Agent Map: ");
+        for (int[] location : agentMap){
+            System.out.print(Arrays.toString(location));
+        }
+        System.out.println("\n");
+    }
+
     private static void printGrid() {
         for (ArrayList<String> row : grid) {
             for (String cell : row) {
@@ -382,7 +405,11 @@ public class WumpusWorld {
         // If the room is empty (no legend set yet), initialize it with the current item
         if (currentLegend.contains("E")) {
             grid.get(x).set(y, "((" + coordinate[0] + "," + coordinate[1] + ") [" + item + "])");
-        } else {
+        } 
+        else if (currentLegend.contains("T") && item.equals("T")){
+            return;
+        }
+        else {
             // If there are already items in the room, append the new item
             String newLegend = currentLegend.replace("])", "," + item + "])"); // Replace closing brackets with new item
             grid.get(x).set(y, newLegend);
@@ -453,6 +480,61 @@ public class WumpusWorld {
             return new int[]{-1, -1};
         }
     }
+
+    private static int whereToMove() {
+        ArrayList<Integer> possibleMoves = new ArrayList<>();
+        possibleMoves.add(1);
+        possibleMoves.add(2);
+        possibleMoves.add(3);
+        possibleMoves.add(4);
+
+        //Handle if Agent is Against a Wall
+        if (agentPosition[0] == 1) {
+            //remove possibility to move up
+            possibleMoves.removeIf(direction -> direction.equals(0));
+
+        }
+        if (agentPosition[0] == 4) {
+            //remove possibility to move down
+            possibleMoves.removeIf(direction -> direction.equals(1));
+        }
+        if (agentPosition[1] == 1) {
+            //remove possibility to move left
+            possibleMoves.removeIf(direction -> direction.equals(2));
+        }
+        if (agentPosition[1] == 4) {
+            //remove possibility to move right
+            possibleMoves.removeIf(direction -> direction.equals(3));
+        }
+        //Handle if Agent Feels a Breeze
+        if (sensor_Breeze(agentPosition)){
+            //Check if spaces adjacent to it were previously traveled to
+                //Eliminate spaces that have been traveled to from "dangerous pits"
+            
+            //Check to see if spaces that are inferentially dangerous have been traveled to and were/weren't dangerous
+                //Eliminate spaces accordingly
+            
+            //Move to spaces that were deemed safe
+
+            //if no spaces were deemed safe, check reroute algorithm
+
+            //if no reroute possible, make risky decision
+
+        }
+        //Handle if Agent Smells a Stench
+        if (sensor_Stench(agentPosition)){
+
+        }
+        //Handle if Agent Must Reroute
+            //if all possible routes from this point are dangerous
+        //Handle if Agent must take a risk
+            //if all possible routes from all points are dangerous
+
+
+
+        return 0;
+    }
+
 
     private static void printAllCoordinates(String category) {
         if (categoryMap.containsKey(category)) {
