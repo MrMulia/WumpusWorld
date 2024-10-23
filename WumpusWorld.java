@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 
 /* ACO494: Foundations of Artificial Intelligence
 *  Project #1 Expert System
@@ -31,13 +33,14 @@ public class WumpusWorld {
     private static Map<int[], String> comb = new HashMap<>();
     private static boolean won = false;
     private static ArrayList<LocationInfo> agentMap = new ArrayList<>(); //The agent's map that they use to keep track of spaces that they previously traveled to
+    private static final String kb = "kb.txt";
 
     public static void main(String[] args) {
         String filePath = "testworld.txt";
         String filePath2 = "testworld2.txt";
         String filePath3 = "testworld3.txt";
 
-        parseFile(filePath);
+        parseFile(filePath3);
         printWorldInformation();
         initializeGrid();
 
@@ -47,18 +50,51 @@ public class WumpusWorld {
 
         initializeAgent();
         printGrid();
-        KB();
+        KB(kb);
         System.out.println();
-        startAgent_random();
+        // CHOOSE YOUR AGENT
+        //startAgent_random();
+        startAgent_expert();
     }
 
-    private static void KB() {
-        int x = GRID_SIZE_X;
-        int y = GRID_SIZE_Y;
-        int[] safePlace = new int[]{1, 1};
-
-        String KB = x + "\n" + y + "\n" + Arrays.toString(safePlace) + "\n";
-        System.out.println(KB);
+    private static void KB(String kbFilePath) {
+        Map<String, String> knowledgeBase = new HashMap<>();
+        
+        try (BufferedReader br = new BufferedReader(new FileReader(kbFilePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(" ", 2);
+                if (parts.length == 2) {
+                    String key = parts[0];
+                    String value = parts[1];
+                    knowledgeBase.put(key, value);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    
+        if (knowledgeBase.containsKey("GRID_SIZE")) {
+            String[] gridSize = knowledgeBase.get("GRID_SIZE").split(" ");
+            int gridSizeX = Integer.parseInt(gridSize[0]);
+            int gridSizeY = Integer.parseInt(gridSize[1]);
+            System.out.println("Grid Size: " + gridSizeX + "x" + gridSizeY);
+        }
+    
+        if (knowledgeBase.containsKey("SAFE_PLACE")) {
+            String[] safePlace = knowledgeBase.get("SAFE_PLACE").split(" ");
+            int safeX = Integer.parseInt(safePlace[0]);
+            int safeY = Integer.parseInt(safePlace[1]);
+            System.out.println("Safe Place: (" + safeX + "," + safeY + ")");
+        }
+    
+        for (Map.Entry<String, String> entry : knowledgeBase.entrySet()) {
+            if (entry.getKey().equals("RULE")) {
+                System.out.println("Knowledge Rule: " + entry.getValue());
+            } else if (entry.getKey().equals("MOVE")) {
+                System.out.println("Agent Move: " + entry.getValue());
+            }
+        }
     }
 
     private static void startAgent_random() {
@@ -75,23 +111,23 @@ public class WumpusWorld {
     
             switch (randDirection) {
                 case 0: 
-                    System.out.println("Agent moves up"); 
+                    System.out.println("\nAgent moves up"); 
                     moved = moveAgent("up");  // Returns true if the agent moves
                     break;
                 case 1: 
-                    System.out.println("Agent moves down"); 
+                    System.out.println("\nAgent moves down"); 
                     moved = moveAgent("down"); 
                     break;
                 case 2: 
-                    System.out.println("Agent moves left"); 
+                    System.out.println("\nAgent moves left"); 
                     moved = moveAgent("left"); 
                     break;
                 case 3: 
-                    System.out.println("Agent moves right"); 
+                    System.out.println("\nAgent moves right"); 
                     moved = moveAgent("right"); 
                     break;
                 default: 
-                    System.out.println("Invalid direction");
+                    System.out.println("\nInvalid direction");
             }
     
             if (moved) {  // Only count valid moves
@@ -112,22 +148,249 @@ public class WumpusWorld {
         }
     }
 
+    private static void startAgent_expert() {
+        int validMoves = 0;  // Track valid moves only
+        addToAgentMap(agentPosition.clone());
+    
+        while (validMoves < 10) {
+            if (!isAlive) return;  // Stop if the agent is dead
+            
+            // Use logic to determine the best move based on KB, rules, and sensors
+            String bestMove = determineBestMove();
+    
+            boolean moved = false;  // Flag to check if the agent successfully moved
+            
+            if (bestMove != null) {
+                System.out.println("\nAgent moves " + bestMove);
+                moved = moveAgent(bestMove);  // Move in the direction determined by the logic
+            } else {
+                System.out.println("No valid safe move found, attempting risky move.");
+                ArrayList<Integer> dangerousMoves = getValidMoves();  // Get valid directions (e.g., up, down, left, right)
+    
+                if (!dangerousMoves.isEmpty()) {
+                    int riskyMove = riskyDecisionAlgorithm(dangerousMoves);  // Pick a risky move
+                    switch (riskyMove) {
+                        case 0:
+                            moved = moveAgent("up");
+                            break;
+                        case 1:
+                            moved = moveAgent("down");
+                            break;
+                        case 2:
+                            moved = moveAgent("left");
+                            break;
+                        case 3:
+                            moved = moveAgent("right");
+                            break;
+                        default:
+                            System.out.println("Error: Invalid risky move.");
+                            moved = false;
+                    }
+                } else {
+                    System.out.println("No risky moves possible, agent is stuck.");
+                    return;  // If no risky moves are possible, stop the agent
+                }
+            }
+    
+            if (moved) {  // Only count valid moves
+                validMoves++;
+                testLogicalProofs();  // Run tests after each valid move
+            }
+    
+            if (won) {
+                System.out.println("Agent achieved its objective.");
+                break;
+            }
+    
+            try {
+                Thread.sleep(1000);  // Pause for 1 second
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    
+    private static String determineBestMove() {
+        // Check if there's a safe move based on the KB, sensors, and knowledge rules
+    
+        // Check surroundings for safe options based on breeze, stench, and known dangers
+        ArrayList<String> safeMoves = new ArrayList<>();
+    
+        // Check possible directions: up, down, left, right
+        if (isMoveSafe("up")) safeMoves.add("up");
+        if (isMoveSafe("down")) safeMoves.add("down");
+        if (isMoveSafe("left")) safeMoves.add("left");
+        if (isMoveSafe("right")) safeMoves.add("right");
+    
+        if (!safeMoves.isEmpty()) {
+            return safeMoves.get(0);  // Choose the first safe move (or apply a more sophisticated choice)
+        }
+    
+        return null;  // No safe move found
+    }
+    
+    private static boolean isMoveSafe(String direction) {
+        int[] newPosition = calculateNewPosition(direction);
+    
+        if (!isLocationValid(newPosition)) {
+            return false;  // Move is invalid or dangerous
+        }
+    
+        return true;  // Safe to move
+    }
+
+    private static int[] calculateNewPosition(String direction) {
+        int[] newPosition = agentPosition.clone();
+    
+        switch (direction.toLowerCase()) {
+            case "up":
+                newPosition[0]--;  // Move up, decrease the row number
+                break;
+            case "down":
+                newPosition[0]++;  // Move down, increase the row number
+                break;
+            case "left":
+                newPosition[1]--;  // Move left, decrease the column number
+                break;
+            case "right":
+                newPosition[1]++;  // Move right, increase the column number
+                break;
+            default:
+                System.out.println("Invalid direction: " + direction);
+        }
+    
+        return newPosition;  // Return the new calculated position
+    }
+
+    private static void clearKnowledgeBase() {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(kb, false))) {  // 'false' to overwrite the file
+            // Write the basic knowledge back to the file after clearing it
+            bw.write("GRID_SIZE 4 4\n");
+            bw.write("SAFE_PLACE 1 1\n");
+            bw.write("RULE Breeze => Pit nearby\n");
+            bw.write("RULE Stench => Wumpus nearby\n");
+            bw.write("MOVE Start (1,1)\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    
+
+    private static void logKnowledgeRule(String rule) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(kb, true))) {
+            bw.write("Knowledge Rule: " + rule + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private static void makeLogicalDeduction() {
+        if (sensor_Breeze(agentPosition)) {
+            logKnowledgeRule("Breeze => Pit nearby");
+            // Mark adjacent cells as potentially dangerous (Pit)
+        } else {
+            logKnowledgeRule("No Breeze => No Pit nearby");
+        }
+    
+        if (sensor_Stench(agentPosition)) {
+            logKnowledgeRule("Stench => Wumpus nearby");
+            // Mark adjacent cells as potentially dangerous (Wumpus)
+        } else {
+            logKnowledgeRule("No Stench => No Wumpus nearby");
+        }
+    }
+
+    private static boolean makeDecisionAndMove() {
+        // Step 1: Check surroundings and sensors
+        makeLogicalDeduction();
+    
+        // Step 2: Determine the best move based on knowledge and sensors
+        String bestMove = determineBestMove();
+        
+        if (bestMove != null) {
+            System.out.println("Agent moves " + bestMove);
+            return moveAgent(bestMove);
+        } else {
+            System.out.println("No valid safe move found, making a risky decision.");
+            ArrayList<Integer> dangerousMoves = getValidMoves();
+            if (!dangerousMoves.isEmpty()) {
+                int riskyMove = riskyDecisionAlgorithm(dangerousMoves);  // Pick a risky move
+                switch (riskyMove) {
+                    case 0:
+                        return moveAgent("up");
+                    case 1:
+                        return moveAgent("down");
+                    case 2:
+                        return moveAgent("left");
+                    case 3:
+                        return moveAgent("right");
+                    default:
+                        System.out.println("Error: Invalid risky move.");
+                        return false;
+                }
+            } else {
+                System.out.println("No risky moves possible, agent is stuck.");
+                return false;  // If no risky move is possible
+            }
+        }
+    }
+    
+    
+
     private static void testLogicalProofs() {
         if (isAlive) {
+            KB(kb);  // Log current knowledge base
+            
+            // Logical conclusions based on sensors
             if (logicalProof_breezeImpliesPit(sensor_Breeze(agentPosition))) {
-                System.out.println("Logical Conclusion: Breeze detected, there must be a pit nearby.\n");
+                System.out.println("Logical Conclusion: Breeze detected, there must be a pit nearby.");
             } else {
-                System.out.println("Logical Conclusion: No breeze detected, no nearby pit.\n");
+                System.out.println("Logical Conclusion: No breeze detected, no nearby pit.");
             }
+            
             if (logicalProof_stenchImpliesWumpus(sensor_Stench(agentPosition))) {
-                System.out.println("Logical Conclusion: Stench detected, there must be a Wumpus nearby.\n");
+                System.out.println("Logical Conclusion: Stench detected, there must be a Wumpus nearby.");
             } else {
-                System.out.println("Logical Conclusion: No stench detected, no nearby Wumpus.\n");
+                System.out.println("Logical Conclusion: No stench detected, no nearby Wumpus.");
+            }
+            
+            // Check if rerouting is necessary
+            if (rerouteCheck()) {
+                System.out.println("Logical Conclusion: Rerouting due to unsafe environment.");
+            } else {
+                System.out.println("Logical Conclusion: No rerouting needed.");
+            }
+            
+            // Check if no safe moves and risky decision is necessary
+            ArrayList<Integer> possibleMoves = getValidMoves();
+            if (possibleMoves.isEmpty()) {
+                System.out.println("Logical Conclusion: No safe moves, risky decision required.");
+                riskyDecisionAlgorithm(new ArrayList<>());  // Perform risky decision
+            } else {
+                System.out.println("Logical Conclusion: Safe moves available.");
             }
         } else {
             System.out.println("Agent is dead.");
         }
     }
+
+    private static ArrayList<Integer> getValidMoves() {
+        ArrayList<Integer> possibleMoves = new ArrayList<>(Arrays.asList(0, 1, 2, 3));  // 0: up, 1: down, 2: left, 3: right
+        
+        // Handle boundaries
+        if (agentPosition[0] == 1) possibleMoves.remove(Integer.valueOf(0));  // Remove "up"
+        if (agentPosition[0] == GRID_SIZE_Y) possibleMoves.remove(Integer.valueOf(1));  // Remove "down"
+        if (agentPosition[1] == 1) possibleMoves.remove(Integer.valueOf(2));  // Remove "left"
+        if (agentPosition[1] == GRID_SIZE_X) possibleMoves.remove(Integer.valueOf(3));  // Remove "right"
+        
+        // Handle dangerous spaces
+        if (sensor_Breeze(agentPosition)) possibleMoves = avoidDangerousSpaces(possibleMoves, "Pit");
+        if (sensor_Stench(agentPosition)) possibleMoves = avoidDangerousSpaces(possibleMoves, "Wumpus");
+        
+        return possibleMoves;
+    }   
 
     private static boolean logicalProof_breezeImpliesPit(boolean breezeDetected) {
         return breezeDetected;
@@ -138,6 +401,8 @@ public class WumpusWorld {
     }
 
     private static void initializeAgent() {
+        clearKnowledgeBase();
+
         setLegend("A", agentPosition);
         System.out.println("Sensor: \n" + agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition), sensor_Breeze(agentPosition)));
     }
@@ -169,6 +434,7 @@ public class WumpusWorld {
             case "up": 
                 if (agentPosition[0] > 1) {
                     agentPosition[0]--; 
+                    logMove("up");
                 } else {
                     System.out.println("Agent can't move up, it's at the top boundary!\n");
                     return false;  // Invalid move
@@ -177,6 +443,7 @@ public class WumpusWorld {
             case "down": 
                 if (agentPosition[0] < GRID_SIZE_Y) {
                     agentPosition[0]++; 
+                    logMove("down");
                 } else {
                     System.out.println("Agent can't move down, it's at the bottom boundary!\n");
                     return false;  // Invalid move
@@ -185,6 +452,7 @@ public class WumpusWorld {
             case "left": 
                 if (agentPosition[1] > 1) {
                     agentPosition[1]--; 
+                    logMove("left");
                 } else {
                     System.out.println("Agent can't move left, it's at the left boundary!\n");
                     return false;  // Invalid move
@@ -193,6 +461,7 @@ public class WumpusWorld {
             case "right": 
                 if (agentPosition[1] < GRID_SIZE_X) {
                     agentPosition[1]++; 
+                    logMove("right");
                 } else {
                     System.out.println("Agent can't move right, it's at the right boundary!\n");
                     return false;  // Invalid move
@@ -236,6 +505,7 @@ public class WumpusWorld {
             setLegend("Gl", agentPosition);  // Add glitter to the room
             printGrid();  // Print the updated grid
             won = true;
+            logWin();
             return true;  // The objective is achieved, agent can stop further exploration
         }
     
@@ -247,7 +517,41 @@ public class WumpusWorld {
         printGrid();  // Print the updated grid
         return true;  // A valid move was made
     }
+
+    private static void logWin() {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(kb, true))) {
+            bw.write("WIN\n");  // Append "WIN" to the knowledge base
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }    
+
+    private static void logMove(String direction) {
+        // Appends the agent's move and sensor readings (W, B, S, P) to the knowledge base
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(kb, true))) {
+            StringBuilder moveLog = new StringBuilder();
     
+            // Log the move with direction and position
+            moveLog.append("MOVE ").append(direction).append(" (")
+                   .append(agentPosition[0]).append(",").append(agentPosition[1]).append(")");
+    
+            // Add sensor readings (Wumpus, Breeze, Stench, Pit)
+            boolean wumpusDetected = sensor_Wumpus(agentPosition);
+            boolean breezeDetected = sensor_Breeze(agentPosition);
+            boolean stenchDetected = sensor_Stench(agentPosition);
+            boolean pitDetected = sensor_Pit(agentPosition);
+    
+            if (wumpusDetected) moveLog.append(" W");
+            if (breezeDetected) moveLog.append(" B");
+            if (stenchDetected) moveLog.append(" S");
+            if (pitDetected) moveLog.append(" P");
+    
+            // Write to the knowledge base file
+            bw.write(moveLog.toString() + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }    
 
     private static boolean sensor_Wumpus(int[] position) {
         ArrayList<int[]> wumpusCoordinate = categoryMap.get("wumpus");
@@ -487,147 +791,165 @@ public class WumpusWorld {
     }
 
     private static int whereToMove() {
-        ArrayList<Integer> possibleMoves = new ArrayList<>();
+        ArrayList<Integer> possibleMoves = new ArrayList<>(Arrays.asList(0, 1, 2, 3));  // 0: up, 1: down, 2: left, 3: right
         ArrayList<Integer> dangerousMoves = new ArrayList<>();
-        possibleMoves.add(1);
-        possibleMoves.add(2);
-        possibleMoves.add(3);
-        possibleMoves.add(4);
-
-        //Handle if Agent is Against a Wall
+    
+        // Handle if Agent is Against a Wall
         if (agentPosition[0] == 1) {
-            //remove possibility to move up
-            possibleMoves.removeIf(direction -> direction.equals(0));
-
+            possibleMoves.removeIf(move -> move == 0);  // Remove "up"
         }
-        if (agentPosition[0] == 4) {
-            //remove possibility to move down
-            possibleMoves.removeIf(direction -> direction.equals(1));
+        if (agentPosition[0] == GRID_SIZE_Y) {
+            possibleMoves.removeIf(move -> move == 1);  // Remove "down"
         }
         if (agentPosition[1] == 1) {
-            //remove possibility to move left
-            possibleMoves.removeIf(direction -> direction.equals(2));
+            possibleMoves.removeIf(move -> move == 2);  // Remove "left"
         }
-        if (agentPosition[1] == 4) {
-            //remove possibility to move right
-            possibleMoves.removeIf(direction -> direction.equals(3));
+        if (agentPosition[1] == GRID_SIZE_X) {
+            possibleMoves.removeIf(move -> move == 3);  // Remove "right"
         }
-        //Handle if Agent Feels a Breeze
-        if (sensor_Breeze(agentPosition)){
-            //Check if spaces adjacent to it were previously traveled to
-                //Eliminate spaces that have been traveled to from "dangerous pits"
+    
+        // Handle if Agent Feels a Breeze
+        if (sensor_Breeze(agentPosition)) {
             dangerousMoves = avoidDangerousSpaces(dangerousMoves, "Pit");
-            //Check to see if spaces that are inferentially dangerous have been traveled to and were/weren't dangerous
-                //Eliminate spaces accordingly
-            ArrayList<int[]> possiblePits = new ArrayList<>();
-            possiblePits.add(new int[] {agentPosition[0]+1, agentPosition[1]});
-            possiblePits.add(new int[] {agentPosition[0]-1, agentPosition[1]});
-            possiblePits.add(new int[] {agentPosition[0], agentPosition[1]+1});
-            possiblePits.add(new int[] {agentPosition[0], agentPosition[1]-1});
-            possiblePits.removeIf(pit -> agentMap.contains(pit));
-
-            ArrayList<int[]> potentialBreezes = new ArrayList<>();
-            potentialBreezes.add(new int[] {agentPosition[0]+2, agentPosition[1]});
-            potentialBreezes.add(new int[] {agentPosition[0]+1, agentPosition[1]-1});
-            potentialBreezes.add(new int[] {agentPosition[0]+1, agentPosition[1]+1});
-
-            potentialBreezes.add(new int[] {agentPosition[0]-2, agentPosition[1]});
-            potentialBreezes.add(new int[] {agentPosition[0]-1, agentPosition[1]+1});
-            potentialBreezes.add(new int[] {agentPosition[0]-1, agentPosition[1]-1});
-            
-            potentialBreezes.add(new int[] {agentPosition[0], agentPosition[1]+2});
-            potentialBreezes.add(new int[] {agentPosition[0], agentPosition[1]-2});
-
-            //Start storing Breeze and Stench info in the agentMap
-            //If we have been to x+2 and there was no breeze, then there is no pit downward
-            //If we have been to x-2 and there was no breeze, then there is no pit upwards
-            //if we have been to y+2 and there was no breeze, then there is no pit to the right
-            //if we have been to y-2 and there was no breeze, then there is no pit to the left
-
-
-
-            //Move to spaces that were deemed safe
-
-            //if no spaces were deemed safe, check reroute algorithm
-
-            //if no reroute possible, make risky decision
-
         }
-        //Handle if Agent Smells a Stench
-        if (sensor_Stench(agentPosition)){
-            avoidDangerousSpaces(dangerousMoves, "Wumpus");
+        
+        // Handle if Agent Smells a Stench
+        if (sensor_Stench(agentPosition)) {
+            dangerousMoves = avoidDangerousSpaces(dangerousMoves, "Wumpus");
         }
-
-        //See if there are any possible safe moves left
-        for (int dangerMove : dangerousMoves){
-            possibleMoves.removeIf(move -> move.equals(dangerMove));
-        }
-
-        //Handle if Agent Must Reroute
-            //if all possible routes from this point are dangerous
-        //Handle if Agent must take a risk
-            //if all possible routes from all points are dangerous
-        if (possibleMoves.isEmpty()){
-            if (rerouteCheck()){
-                rerouteAlgorithm();
-            }
-            else{
-                riskyDecisionAlgorithm(possibleMoves);
+    
+        // Remove dangerous moves from the list of possible moves
+        possibleMoves.removeAll(dangerousMoves);
+    
+        // Check if no safe moves are available
+        if (possibleMoves.isEmpty()) {
+            if (rerouteCheck()) {
+                return rerouteAlgorithm();
+            } else {
+                return riskyDecisionAlgorithm(dangerousMoves);
             }
         }
+    
+        // Return a random safe move (you can prioritize safer moves based on additional logic)
+        Random rand = new Random();
+        return possibleMoves.get(rand.nextInt(possibleMoves.size()));
+    }
 
-        return 0;
+    private static boolean isAdjacentToPit(int[] location) {
+        ArrayList<int[]> pitCoordinates = categoryMap.get("pit");
+        for (int[] pitCoord : pitCoordinates) {
+            if (Math.abs(pitCoord[0] - location[0]) == 1 && pitCoord[1] == location[1]) {
+                return true;  // Pit is vertically adjacent
+            }
+            if (Math.abs(pitCoord[1] - location[1]) == 1 && pitCoord[0] == location[0]) {
+                return true;  // Pit is horizontally adjacent
+            }
+        }
+        return false;
+    }
+
+    private static boolean isAdjacentToWumpus(int[] location) {
+        ArrayList<int[]> wumpusCoordinates = categoryMap.get("wumpus");
+        for (int[] wumpusCoord : wumpusCoordinates) {
+            if (Math.abs(wumpusCoord[0] - location[0]) == 1 && wumpusCoord[1] == location[1]) {
+                return true;  // Wumpus is vertically adjacent
+            }
+            if (Math.abs(wumpusCoord[1] - location[1]) == 1 && wumpusCoord[0] == location[0]) {
+                return true;  // Wumpus is horizontally adjacent
+            }
+        }
+        return false;
+    }
+
+    private static LocationInfo getLocationInfo(int[] location) {
+        for (LocationInfo info : agentMap) {
+            if (Arrays.equals(info.getCoordinates(), location)) {
+                return info;
+            }
+        }
+        return null;  // Location not found in the agent's map
+    }    
+
+    private static boolean isLocationValid(int[] location) {
+        int x = location[0];
+        int y = location[1];
+    
+        // 1. Check if the location is within the grid bounds
+        if (x < 1 || x > GRID_SIZE_X || y < 1 || y > GRID_SIZE_Y) {
+            return false;  // Out of bounds
+        }
+    
+        // 2. Check if the location has been visited and is known to be safe
+        if (checkAgentMap(location)) {
+            // If it's a previously visited location and the agent knows it is safe, allow revisiting
+            LocationInfo visitedInfo = getLocationInfo(location);
+            if (visitedInfo != null && !visitedInfo.hasBreeze() && !visitedInfo.hasStench()) {
+                return true;  // Safe to revisit
+            }
+            // If the location is dangerous, avoid it
+            return false;
+        }
+    
+        // 3. Avoid known dangerous locations (Wumpus or Pit)
+        if (sensor_Wumpus(location) || sensor_Pit(location)) {
+            return false;  // Unsafe due to Wumpus or Pit
+        }
+    
+        // 4. Avoid potential dangerous locations based on sensor data
+        if (sensor_Breeze(agentPosition)) {
+            if (isAdjacentToPit(location)) {
+                return false;  // Potential pit nearby
+            }
+        }
+        if (sensor_Stench(agentPosition)) {
+            if (isAdjacentToWumpus(location)) {
+                return false;  // Potential Wumpus nearby
+            }
+        }
+    
+        return true;  // If all checks pass, the location is valid
     }
 
     private static ArrayList<Integer> avoidDangerousSpaces(ArrayList<Integer> dangerousMoves, String dangerType) {
-        // Logic to avoid spaces based on dangerType (e.g., pits or Wumpus)
-        //Pits
-            //If we have previously been to a place that could've been a source pit for the breeze then we know that it is not
-            //If we have previously been to a place that could've been a breeze spot depending on the source pit for this breeze, then we can eliminate the possible source pit from contention
-        if (dangerType.equals("Pit")){ 
-            for (LocationInfo info : agentMap){
+        if (dangerType.equals("Pit")) {
+            for (LocationInfo info : agentMap) {
                 int[] currentLocation = info.getCoordinates();
-
                 int[][] adjacentLocations = {
-                    {currentLocation[0] - 1, currentLocation[1]}, //Up
-                    {currentLocation[0] + 1, currentLocation[1]}, //Down
-                    {currentLocation[0], currentLocation[1] - 1}, //Left
-                    {currentLocation[0], currentLocation[1] + 1} //Right
-                }
-                
-                //If agent feels a breeze, check agent map to see if we have been to potential pit spaces
-                for (int i = 0; i< adjacentLocations.length; i++){
-                    int[] adjLocation = adjacentLocations[i];
-
-                    if (adjLocation[0] < 1 || adjLocation[0] > GRID_SIZE_X || adjLocation[1] < 1 || adjLocation[1] > GRID_SIZE_Y){
-                        continue;
-                    }
-
-                    boolean visited = checkAgentMap(adjLocation);
-
-                    if (!visited) {
+                    {currentLocation[0] - 1, currentLocation[1]},  // Up
+                    {currentLocation[0] + 1, currentLocation[1]},  // Down
+                    {currentLocation[0], currentLocation[1] - 1},  // Left
+                    {currentLocation[0], currentLocation[1] + 1}   // Right
+                };
+                for (int[] adjLocation : adjacentLocations) {
+                    if (isLocationValid(adjLocation) && !checkAgentMap(adjLocation)) {
                         int moveDirection = getMoveDirection(currentLocation, adjLocation);
-                        if (!dangerousMoves.contains(moveDirection)){
+                        dangerousMoves.add(moveDirection);
+                    }
+                }
+            }
+        } else if (dangerType.equals("Wumpus")) {
+            // Similar logic for Wumpus based on stench
+            for (LocationInfo info : agentMap) {
+                int[] currentLocation = info.getCoordinates();
+                if (info.hasStench()) {
+                    int[][] adjacentLocations = {
+                        {currentLocation[0] - 1, currentLocation[1]},  // Up
+                        {currentLocation[0] + 1, currentLocation[1]},  // Down
+                        {currentLocation[0], currentLocation[1] - 1},  // Left
+                        {currentLocation[0], currentLocation[1] + 1}   // Right
+                    };
+                    for (int[] adjLocation : adjacentLocations) {
+                        if (isLocationValid(adjLocation) && !checkAgentMap(adjLocation)) {
+                            int moveDirection = getMoveDirection(currentLocation, adjLocation);
                             dangerousMoves.add(moveDirection);
                         }
-
                     }
                 }
-                //if agent feels a breeze, check if we have been to potential breeze spaces
-                
             }
-            return dangerousMoves;
-        }
-        
-        //Wumpus
-            //If we have previously been to a place that could've been a source wumpus for the stench then we know that it is not
-            //If we have previously been to a place that could've been a stench spot depending on the source wumpus for this stench, then we can eliminate the possible surce wumpus from contention
-            //If we have already deduced which space belongs to the wumpus, then that is the only "possible source wumpus" space that we should avoid
-        if (dangerType.equals("Wumpus")){ 
-
         }
         return dangerousMoves;
     }
+    
 
     private static int getMoveDirection(int[] current, int[] adjacent) {
         if (adjacent[0] == current[0] + 1 && adjacent[1] == current[1]) {
@@ -641,26 +963,42 @@ public class WumpusWorld {
         }
         return -1; // Error or invalid move
     }
-    
 
     private static boolean rerouteCheck() {
-        return false;
-    }
+        // Check if the agent has previously visited any safe places that could be rerouted to
+        for (LocationInfo info : agentMap) {
+            if (!info.hasBreeze() && !info.hasStench()) {
+                return true;  // A safe reroute exists
+            }
+        }
+        return false;  // No reroute available
+    }    
 
     private static int rerouteAlgorithm() {
-        return -1;  // Placeholder return value for rerouting
+        // Find the nearest previously visited safe location and move towards it
+        for (LocationInfo info : agentMap) {
+            if (!info.hasBreeze() && !info.hasStench()) {
+                int[] safeLocation = info.getCoordinates();
+                return getMoveDirection(agentPosition, safeLocation);  // Calculate the move direction to the safe place
+            }
+        }
+        return -1;  // No reroute possible
     }
+    
     
     private static boolean allMovesSeemDangerous(ArrayList<Integer> possibleMoves) {
         // Logic to check if all remaining moves appear dangerous
         return false;  // Placeholder - You can implement actual checks here
     }
     
-    private static int riskyDecisionAlgorithm(ArrayList<Integer> possibleMoves) {
-        // Logic for making a risky decision if all moves are dangerous
+    private static int riskyDecisionAlgorithm(ArrayList<Integer> dangerousMoves) {
+        // When forced to make a risky decision, pick randomly from dangerous moves
         Random rand = new Random();
-        return possibleMoves.get(rand.nextInt(possibleMoves.size()));  // Placeholder risky decision
+        int riskyMove = dangerousMoves.get(rand.nextInt(dangerousMoves.size()));
+        System.out.println("Logical Conclusion: Taking a risky move in direction: " + riskyMove);
+        return riskyMove;
     }
+    
 
     private static void printAllCoordinates(String category) {
         if (categoryMap.containsKey(category)) {

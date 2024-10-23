@@ -1,0 +1,96 @@
+1. logicalProof_breezeImpliesPit(boolean breezeDetected)
+Purpose:
+This function determines whether the agent should logically conclude that there is a pit nearby based on the detection of a breeze.
+Input:
+breezeDetected: A boolean value indicating whether a breeze is currently detected at the agent’s position.
+Output:
+Returns true if a breeze is detected (indicating a pit is nearby), or false if no breeze is detected.
+Explanation:
+In Wumpus World, a breeze typically indicates that there is a pit in one of the adjacent cells to the agent. The agent uses this sensor input to make logical deductions about potential dangers in the nearby environment.
+
+2. logicalProof_stenchImpliesWumpus(boolean stenchDetected)
+Purpose:
+This function determines whether the agent should logically conclude that a Wumpus is nearby based on the detection of a stench.
+Input:
+stenchDetected: A boolean value indicating whether a stench is detected at the agent's position.
+Output:
+Returns true if a stench is detected (indicating a Wumpus is nearby), or false if no stench is detected.
+Explanation:
+A stench in Wumpus World indicates that a Wumpus is in one of the adjacent cells. The agent uses this sensory input to infer the proximity of the Wumpus, avoiding potentially dangerous cells.
+
+
+
+3. rerouteCheck()
+Purpose:
+To determine if the agent needs to reroute based on previously visited safe places.
+Output:
+Returns true if the agent has visited safe places (no breeze or stench) and can reroute to them. Returns false if no such places are found.
+Explanation:
+The agent checks its map of previously visited locations. If it detects that it is in a dangerous area (due to a breeze or stench) and has no safe moves available, the agent checks if it can reroute to a previously visited safe place.
+
+4. rerouteAlgorithm()
+Purpose:
+To find a safe route for the agent to move toward based on previously visited safe locations.
+Output:
+Returns an integer representing the direction in which to move (0: up, 1: down, 2: left, 3: right) based on the nearest safe location. Returns -1 if no reroute is possible.
+Explanation:
+If the agent finds itself in a dangerous or uncertain situation, it can attempt to move back to a previously visited safe location. The function calculates the best move to get the agent closer to this safe location.
+
+
+
+
+
+
+
+
+5. riskyDecisionAlgorithm(ArrayList<Integer> dangerousMoves)
+Purpose:
+To make a risky decision when the agent has no other safe options left.
+Input:
+dangerousMoves: A list of potentially dangerous moves that the agent may be forced to choose from.
+Output:
+Returns an integer representing a randomly chosen move from the dangerous moves.
+Explanation:
+When all safe options are exhausted, the agent may need to make a risky decision by moving into a dangerous area. This function randomly selects one of the dangerous moves to proceed with.
+
+6. getValidMoves()
+Purpose:
+To identify and return a list of valid moves the agent can make, based on current conditions like grid boundaries and sensor readings.
+Output:
+Returns an ArrayList<Integer> containing valid moves (0: up, 1: down, 2: left, 3: right) that the agent can take.
+Explanation:
+This function checks the agent's position and evaluates the boundaries of the grid (to avoid moving out of bounds) and any dangerous conditions (like detecting breeze or stench) to determine which moves are valid and safe for the agent.
+
+
+
+
+
+
+7. isMoveSafe(String direction)
+Purpose:
+To check if a move in a particular direction is safe based on the current knowledge and sensory inputs.
+Input:
+direction: A string representing the direction of the move ("up", "down", "left", or "right").
+Output:
+Returns true if the move is considered safe, false if it is dangerous or invalid.
+Explanation:
+The function calculates the new position based on the direction and then evaluates whether that move is safe by checking for boundaries and potential dangers (such as breeze or stench).
+
+8. makeDecisionAndMove()
+Purpose:
+To make an intelligent decision about the agent's next move based on the current knowledge base, logical deductions, and sensors.
+Output:
+Returns true if the agent successfully moves, false if no valid move is found.
+Explanation:
+The agent first checks its surroundings using the sensors (breeze and stench) and makes logical deductions about potential dangers (such as nearby pits or Wumpus). Then, based on this information, the agent determines the best move to make, prioritizing safe directions and avoiding dangerous moves.
+
+
+
+
+
+
+9. testLogicalProofs()
+Purpose:
+To test the logical conclusions the agent can make based on its current position and sensory inputs.
+Explanation:
+The agent uses its sensory data (breeze, stench) to make logical conclusions about its surroundings. The function checks for rerouting needs, safe moves, and whether a risky decision is necessary, and logs all conclusions.
