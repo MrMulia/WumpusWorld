@@ -413,6 +413,7 @@ public class WumpusWorld {
 
     private static Boolean agent_dead() {
         isAlive = false;
+        logDead();
         return isAlive;
     }
 
@@ -521,6 +522,15 @@ public class WumpusWorld {
     private static void logWin() {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(kb, true))) {
             bw.write("WIN\n");  // Append "WIN" to the knowledge base
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private static void logDead() {
+        // Appends "DEAD" to the knowledge base when the agent dies
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(kb, true))) {
+            bw.write("DEAD\n");
         } catch (IOException e) {
             e.printStackTrace();
         }

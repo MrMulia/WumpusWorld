@@ -11,3 +11,4 @@ MOVE down (2,3) B
 MOVE right (2,4) S
 MOVE down (3,4) B
 MOVE left (3,3) P
+DEAD
