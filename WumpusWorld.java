@@ -40,7 +40,7 @@ public class WumpusWorld {
         String filePath2 = "testworld2.txt";
         String filePath3 = "testworld3.txt";
 
-        parseFile(filePath3);
+        parseFile(filePath);
         printWorldInformation();
         initializeGrid();
 
@@ -238,7 +238,6 @@ public class WumpusWorld {
         if (isSafeToMove("right")) { safeMoves.add("right"); } 
         else { LRMoves.add("right"); }
     
-        // If any safe moves are found, choose one (could add more sophisticated logic later)
         if (!safeMoves.isEmpty()) {
             System.out.println(safeMoves.toString());
             return safeMoves.get(0);  // For now, just pick the first safe move
@@ -329,7 +328,6 @@ public class WumpusWorld {
             e.printStackTrace();
         }
     }
-    
     
 
     private static void logKnowledgeRule(String rule) {
@@ -428,7 +426,7 @@ public class WumpusWorld {
             if (determineBestMove() != null) {
                 System.out.println("Logical Conclusion: Safe moves available.");
             }
-            
+
         } else {
             System.out.println("Agent is dead.");
         }

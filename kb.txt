@@ -3,3 +3,12 @@ SAFE_PLACE 1 1
 RULE Breeze => Pit nearby
 RULE Stench => Wumpus nearby
 MOVE Start (1,1)
+MOVE right (1,2)
+MOVE down (2,2) B
+MOVE up (1,2)
+MOVE right (1,3) S
+MOVE down (2,3) B
+MOVE right (2,4) S
+MOVE down (3,4) B
+MOVE left (3,3) P
+DEAD
