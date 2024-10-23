@@ -89,9 +89,7 @@ public class WumpusWorld {
         }
     
         for (Map.Entry<String, String> entry : knowledgeBase.entrySet()) {
-            if (entry.getKey().equals("RULE")) {
-                System.out.println("Knowledge Rule: " + entry.getValue());
-            } else if (entry.getKey().equals("MOVE")) {
+            if (entry.getKey().equals("MOVE")) {
                 System.out.println("Agent Move: " + entry.getValue());
             }
         }
@@ -212,23 +210,44 @@ public class WumpusWorld {
     
     
     private static String determineBestMove() {
-        // Check if there's a safe move based on the KB, sensors, and knowledge rules
+        // Step 1: Evaluate surrounding rooms based on current sensors
+        makeLogicalDeduction();
     
-        // Check surroundings for safe options based on breeze, stench, and known dangers
+        // Step 2: Check the adjacent rooms for safety based on the current room's sensor data.
         ArrayList<String> safeMoves = new ArrayList<>();
+
+        // Low Risk Moves
+        ArrayList<String> LRMoves = new ArrayList<>();
+        // Medium Risk Moves
+        ArrayList<String> MRMoves = new ArrayList<>();
+        // High Risk Moves
+        ArrayList<String> HRMoves = new ArrayList<>();
+        // Absolute Death Moves
+        ArrayList<String> ADMoves = new ArrayList<>();
     
-        // Check possible directions: up, down, left, right
-        if (isMoveSafe("up")) safeMoves.add("up");
-        if (isMoveSafe("down")) safeMoves.add("down");
-        if (isMoveSafe("left")) safeMoves.add("left");
-        if (isMoveSafe("right")) safeMoves.add("right");
+        // Check each possible move direction, deducing safety based on the current room's sensor information
+        if (isSafeToMove("up")) { safeMoves.add("up"); } 
+        else { LRMoves.add("up"); }
+
+        if (isSafeToMove("down")) { safeMoves.add("down"); } 
+        else { LRMoves.add("down"); }
+
+        if (isSafeToMove("left")) { safeMoves.add("left"); } 
+        else { LRMoves.add("left"); }
+
+        if (isSafeToMove("right")) { safeMoves.add("right"); } 
+        else { LRMoves.add("right"); }
     
+        // If any safe moves are found, choose one (could add more sophisticated logic later)
         if (!safeMoves.isEmpty()) {
-            return safeMoves.get(0);  // Choose the first safe move (or apply a more sophisticated choice)
+            System.out.println(safeMoves.toString());
+            return safeMoves.get(0);  // For now, just pick the first safe move
         }
     
-        return null;  // No safe move found
+        // Step 3: If no safe move is found, make a risky decision
+        return null;  // Indicating that no safe moves are available
     }
+    
     
     private static boolean isMoveSafe(String direction) {
         int[] newPosition = calculateNewPosition(direction);
@@ -239,6 +258,41 @@ public class WumpusWorld {
     
         return true;  // Safe to move
     }
+
+    private static boolean isSafeToMove(String direction) {
+        // Calculate the new position based on the given direction
+        int[] newPosition = calculateNewPosition(direction);
+    
+        // Check if the new position is within bounds (handle the grid boundary)
+        if (!isWithinBounds(newPosition)) {
+            return false;
+        }
+    
+        // Deduce safety based on current sensors:
+        // - Breeze implies a pit is nearby, so avoid moving into rooms adjacent to a pit
+        if (sensor_Breeze(agentPosition)) {
+            return false;  // If there's a breeze in the current room, adjacent rooms might have a pit
+        }
+        
+        // - Stench implies the Wumpus is nearby, so avoid adjacent rooms
+        if (sensor_Stench(agentPosition)) {
+            return false;  // If there's a stench, adjacent rooms might have a Wumpus
+        }
+    
+        // If none of the conditions apply, assume it's safe
+        return true;
+    }
+
+    private static boolean isWithinBounds(int[] position) {
+        int x = position[0];  // The row number
+        int y = position[1];  // The column number
+    
+        if (x >= 1 && x <= GRID_SIZE_X && y >= 1 && y <= GRID_SIZE_Y) {
+            return true;  // The position is within bounds
+        } else {
+            return false;  // The position is out of bounds
+        }
+    }    
 
     private static int[] calculateNewPosition(String direction) {
         int[] newPosition = agentPosition.clone();
@@ -368,9 +422,13 @@ public class WumpusWorld {
             if (possibleMoves.isEmpty()) {
                 System.out.println("Logical Conclusion: No safe moves, risky decision required.");
                 riskyDecisionAlgorithm(new ArrayList<>());  // Perform risky decision
-            } else {
+            }
+
+            // There is a best move.
+            if (determineBestMove() != null) {
                 System.out.println("Logical Conclusion: Safe moves available.");
             }
+            
         } else {
             System.out.println("Agent is dead.");
         }
@@ -1022,4 +1080,3 @@ public class WumpusWorld {
         }
     }
 }
-
