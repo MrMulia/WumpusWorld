@@ -18,8 +18,6 @@ Returns true if a stench is detected (indicating a Wumpus is nearby), or false i
 Explanation:
 A stench in Wumpus World indicates that a Wumpus is in one of the adjacent cells. The agent uses this sensory input to infer the proximity of the Wumpus, avoiding potentially dangerous cells.
 
-
-
 3. rerouteCheck()
 Purpose:
 To determine if the agent needs to reroute based on previously visited safe places.
@@ -35,13 +33,6 @@ Output:
 Returns an integer representing the direction in which to move (0: up, 1: down, 2: left, 3: right) based on the nearest safe location. Returns -1 if no reroute is possible.
 Explanation:
 If the agent finds itself in a dangerous or uncertain situation, it can attempt to move back to a previously visited safe location. The function calculates the best move to get the agent closer to this safe location.
-
-
-
-
-
-
-
 
 5. riskyDecisionAlgorithm(ArrayList<Integer> dangerousMoves)
 Purpose:
@@ -61,11 +52,6 @@ Returns an ArrayList<Integer> containing valid moves (0: up, 1: down, 2: left, 3
 Explanation:
 This function checks the agent's position and evaluates the boundaries of the grid (to avoid moving out of bounds) and any dangerous conditions (like detecting breeze or stench) to determine which moves are valid and safe for the agent.
 
-
-
-
-
-
 7. isMoveSafe(String direction)
 Purpose:
 To check if a move in a particular direction is safe based on the current knowledge and sensory inputs.
@@ -83,11 +69,6 @@ Output:
 Returns true if the agent successfully moves, false if no valid move is found.
 Explanation:
 The agent first checks its surroundings using the sensors (breeze and stench) and makes logical deductions about potential dangers (such as nearby pits or Wumpus). Then, based on this information, the agent determines the best move to make, prioritizing safe directions and avoiding dangerous moves.
-
-
-
-
-
 
 9. testLogicalProofs()
 Purpose:
