@@ -54,7 +54,7 @@ public class WumpusWorld {
         System.out.println();
         // CHOOSE YOUR AGENT
         //startAgent_random();
-        startAgent_expert();
+        startAgent_expert_v1();
     }
 
     private static void KB(String kbFilePath) {
@@ -146,10 +146,11 @@ public class WumpusWorld {
         }
     }
 
-    private static void startAgent_expert() {
+    private static void startAgent_expert_v1() {
         int validMoves = 0;  // Track valid moves only
         addToAgentMap(agentPosition.clone());
-    
+        
+    while (!won) {
         while (validMoves < 10) {
             if (!isAlive) return;  // Stop if the agent is dead
             
@@ -207,6 +208,7 @@ public class WumpusWorld {
             }
         }
     }
+    }
     
     
     private static String determineBestMove() {
@@ -239,10 +241,11 @@ public class WumpusWorld {
         else { LRMoves.add("right"); }
     
         if (!safeMoves.isEmpty()) {
+            Random rand = new Random();
             System.out.println(safeMoves.toString());
-            return safeMoves.get(0);  // For now, just pick the first safe move
+            int sM_size = safeMoves.size();
+            return safeMoves.get(rand.nextInt(0, sM_size));
         }
-    
         // Step 3: If no safe move is found, make a risky decision
         return null;  // Indicating that no safe moves are available
     }
