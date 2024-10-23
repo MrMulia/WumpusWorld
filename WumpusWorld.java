@@ -40,7 +40,7 @@ public class WumpusWorld {
         String filePath2 = "testworld2.txt";
         String filePath3 = "testworld3.txt";
 
-        parseFile(filePath3);
+        parseFile(filePath);
         printWorldInformation();
         initializeGrid();
 
