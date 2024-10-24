@@ -54,14 +54,14 @@ I. How to Start the Game:
 
 II. Custom Environment
 This section explains how to create a custom environment on the 4x4 grid.
-	I. Creating the txt file.
+	I. Creating the .txt file.
 			wumpus 1 4
 			gold 4 3
 			pit 2 1
 			pit 3 3
 			pit 4 4
-The code only accepts txt files, make sure to save it as a .txt file.
-	II. Move the Txt file into the file with the source code.
+The code only accepts .txt files, make sure to save it as a .txt file.
+	II. Move the .txt file into the file with the source code.
 	III. Change line 40 which states "String filepath ="testworld.txt" " of the code to include your textfile name.
 
 Extra Information:
