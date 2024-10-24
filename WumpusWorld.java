@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Random;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.util.Scanner;
 
 /* ACO494: Foundations of Artificial Intelligence
 *  Project #1 Expert System
@@ -40,7 +41,7 @@ public class WumpusWorld {
         String filePath2 = "testworld2.txt";
         String filePath3 = "testworld3.txt";
 
-        parseFile(filePath);
+        parseFile(filePath3);
         printWorldInformation();
         initializeGrid();
 
@@ -55,6 +56,42 @@ public class WumpusWorld {
         // CHOOSE YOUR AGENT
         //startAgent_random();
         startAgent_expert_v1();
+
+        Scanner scanner = new Scanner(System.in);
+        String choice;
+        
+        System.out.println("Do you want to test the agent's chamber knowledge? (Y/n) ");
+        String reply = scanner.nextLine();  // Use nextLine() to capture the full line of input
+
+        do {
+            
+            if (reply.equalsIgnoreCase("Y")) {
+                // Prompt the user for coordinates to query
+                System.out.println("Enter a coordinate to check the agent's knowledge:");
+                System.out.print("x = ");
+                int x = scanner.nextInt();  // Read integer for x
+                System.out.print("y = ");
+                int y = scanner.nextInt();  // Read integer for y
+                scanner.nextLine();  // Consume the remaining newline
+        
+                // Check the status of the entered coordinates
+                String result = checkChamberStatus(x, y);
+                System.out.println(result);
+        
+                // Ask the user if they want to query more coordinates
+                System.out.print("Do you want to check another coordinate? (Y/n): ");
+                choice = scanner.nextLine();  // Capture user input for next choice
+        
+                if (!choice.equalsIgnoreCase("Y")) {
+                    break;  // Exit the loop if user enters anything other than 'Y'
+                }
+            } else {
+                break;  // Exit if the user chooses not to test the knowledge
+            }
+        } while (true);
+        
+        System.out.println("Exiting program...");
+        
     }
 
     private static void KB(String kbFilePath) {
@@ -137,7 +174,7 @@ public class WumpusWorld {
                 System.out.println("Agent achieved its objective.");
                 break;
             }
-    
+
             try {
                 Thread.sleep(1000);  // Pause for 1 second
             } catch (InterruptedException e) {
@@ -150,15 +187,14 @@ public class WumpusWorld {
         int validMoves = 0;  // Track valid moves only
         addToAgentMap(agentPosition.clone());
         
-    while (!won) {
-        while (validMoves < 10) {
+        while (!won && isAlive && validMoves < 10) {
             if (!isAlive) return;  // Stop if the agent is dead
             
             // Use logic to determine the best move based on KB, rules, and sensors
             String bestMove = determineBestMove();
     
             boolean moved = false;  // Flag to check if the agent successfully moved
-            
+    
             if (bestMove != null) {
                 System.out.println("\nAgent moves " + bestMove);
                 moved = moveAgent(bestMove);  // Move in the direction determined by the logic
@@ -194,10 +230,11 @@ public class WumpusWorld {
             if (moved) {  // Only count valid moves
                 validMoves++;
                 testLogicalProofs();  // Run tests after each valid move
+                exportWorldState("current_world_state.txt");
             }
     
-            if (won) {
-                System.out.println("Agent achieved its objective.");
+            // Exit if agent wins or dies
+            if (won || !isAlive) {
                 break;
             }
     
@@ -207,9 +244,44 @@ public class WumpusWorld {
                 e.printStackTrace();
             }
         }
-    }
-    }
     
+        if (validMoves >= 10) {
+            System.out.println("Maximum move limit reached. Exiting...");
+        }
+    }    
+
+    public static void exportWorldState(String fileName) {
+        int move = 0;
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+    
+            writer.write("### Wumpus World State ###\n");
+            writer.write("Agent's Current Position: (" + agentPosition[0] + ", " + agentPosition[1] + ")\n");
+            writer.write("Movements Made: " + movementsMade + "\n");
+            writer.write("Agent State: " + agent_state() + "\n");
+            writer.write("World Won: " + won + "\n\n");
+    
+            writer.write("### Grid State ###\n");
+            for (int i = 0; i < grid.size(); i++) {
+                for (int j = 0; j < grid.get(i).size(); j++) {
+                    writer.write(grid.get(i).get(j) + "\t");
+                }
+                writer.write("\n");
+            }
+    
+            writer.write("\n### Agent Knowledge ###\n");
+            for (LocationInfo info : agentMap) {
+                writer.write("\nMovement Number: " + move + "\n");
+                writer.write(info.toString());
+                int[] loc = info.getCoordinates();
+                writer.write("Probability of Pit: " + String.format( "%.2f", calculatePitProbability(loc[0], loc[1])) + "\n");
+                writer.write("Probability of Wumpus: " + String.format( "%.2f", calculateWumpusProbability(loc[0], loc[1])) + "\n");
+                move++;
+            }
+    
+        } catch (IOException e) {
+            System.err.println("Error writing to file: " + e.getMessage());
+        }
+    }
     
     private static String determineBestMove() {
         // Step 1: Evaluate surrounding rooms based on current sensors
@@ -242,7 +314,6 @@ public class WumpusWorld {
     
         if (!safeMoves.isEmpty()) {
             Random rand = new Random();
-            System.out.println(safeMoves.toString());
             int sM_size = safeMoves.size();
             return safeMoves.get(rand.nextInt(0, sM_size));
         }
@@ -463,11 +534,25 @@ public class WumpusWorld {
         clearKnowledgeBase();
 
         setLegend("A", agentPosition);
-        System.out.println("Sensor: \n" + agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition), sensor_Breeze(agentPosition)));
+        int[] pos = agentPosition.clone();
+        System.out.println("Sensor: \n" + 
+            agentSensor(
+            sensor_Wumpus(pos), 
+            sensor_Pit(pos), 
+            sensor_Breeze(pos), 
+            sensor_Stench(pos),
+            sensor_Glitter(pos),
+            sensor_Gold(pos)
+            )
+        );
     }
 
-    private static Boolean agent_state() {
-        return isAlive;
+    private static String agent_state() {
+        if (isAlive) {
+            return "Alive";
+        } else {
+            return "Dead";
+        }
     }
 
     private static Boolean agent_dead() {
@@ -478,7 +563,7 @@ public class WumpusWorld {
 
     private static boolean moveAgent(String direction) {
         clearPosition(agentPosition);  // Clear current agent position from the grid
-        printAgentMap();
+        //printAgentMap();
 
         if (!isAlive) {
             System.out.println("Agent is dead, no more moves!");
@@ -539,8 +624,8 @@ public class WumpusWorld {
         }
     
         // Update the sensor values for the new position
-        agentSensor(sensor_Wumpus(agentPosition), sensor_Pit(agentPosition), sensor_Breeze(agentPosition));
-        System.out.println("Sensor: \n" + sensor);
+        updateSensors();
+        System.out.println("\nSensor: \n" + sensor);
     
         // Check if agent encountered Wumpus or Pit
         if (sensor_Wumpus(agentPosition)) {
@@ -664,6 +749,16 @@ public class WumpusWorld {
         return false;
     }
 
+    private static boolean sensor_Glitter(int[] position) {
+        ArrayList<int[]> goldCoordinates = categoryMap.get("gold");
+        for (int[] goldCoord : goldCoordinates) {
+            if (Arrays.equals(position, goldCoord)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean sensor_Gold(int[] position) {
         ArrayList<int[]> goldCoordinates = categoryMap.get("gold");
         for (int[] goldCoord : goldCoordinates) {
@@ -674,15 +769,35 @@ public class WumpusWorld {
         return false;
     }
 
-    private static Map<String, Boolean> agentSensor(boolean checkForWumpus, boolean checkForPit, boolean checkForBreeze) {
+    private static Map<String, Boolean> agentSensor(boolean checkForWumpus, boolean checkForPit, 
+                                                    boolean checkForBreeze, boolean checkForStench, 
+                                                    boolean checkForGlitter, boolean checkForGold) {
         boolean sensor_Wumpus = checkForWumpus;
         boolean sensor_Pit = checkForPit;
         boolean sensor_Breeze = checkForBreeze;
+        boolean sensor_Stench = checkForStench;
+        boolean sensor_Glitter = checkForGlitter;
+        boolean sensor_Gold = checkForGold;
         sensor.put("sensor_Wumpus", sensor_Wumpus);
         sensor.put("sensor_Pit", sensor_Pit);
         sensor.put("sensor_Breeze", sensor_Breeze);
+        sensor.put("sensor_Stench", sensor_Stench);
+        sensor.put("sensor_Glitter", sensor_Glitter);
+        sensor.put("sensor_Gold", sensor_Gold);
         return sensor;
     }
+
+    private static void updateSensors() {
+        // Update sensors based on the agent's current position
+        sensor = agentSensor(
+            sensor_Wumpus(agentPosition),
+            sensor_Pit(agentPosition),
+            sensor_Breeze(agentPosition),
+            sensor_Stench(agentPosition),
+            sensor_Glitter(agentPosition),
+            sensor_Gold(agentPosition)
+        );
+    }    
 
     // Clear position and restore original environment markers
     private static void clearPosition(int[] position) {
@@ -707,18 +822,15 @@ public class WumpusWorld {
         System.out.print("Legend Size: " + categoryMap.size() + " ");
         System.out.println(categoryMap.keySet() + "\n");
 
-        printAllCoordinates("pit");
         for (int i = 0; i < categoryMap.get("pit").size(); i++) {
             int[] pitCoordinate = getCoordinate("pit", i);
             final int indexBalancer = i + 1;
             System.out.println("Pit #" + indexBalancer + " : (" + pitCoordinate[0] + ", " + pitCoordinate[1] + ")");
         }
 
-        printAllCoordinates("wumpus");
         int[] wumpusCoordinate = getCoordinate("wumpus", 0);
         System.out.println("Wumpus: (" + wumpusCoordinate[0] + ", " + wumpusCoordinate[1] + ")");
 
-        printAllCoordinates("gold");
         int[] goldCoordinate = getCoordinate("gold", 0);
         System.out.println("Gold: (" + goldCoordinate[0] + ", " + goldCoordinate[1] + ")");
 
@@ -739,14 +851,21 @@ public class WumpusWorld {
     private static void addToAgentMap(int[] location) {
         boolean hasBreeze = sensor_Breeze(location);
         boolean hasStench = sensor_Stench(location);
-        
+        boolean hasPit = sensor_Pit(location);
+        boolean hasWumpus = sensor_Wumpus(location);
+        boolean hasGlitter = sensor_Glitter(location);
+        boolean hasGold = sensor_Gold(location);
+    
         for (LocationInfo info : agentMap){
-            if (Arrays.equals(location, info.getCoordinates())){
+            if (Arrays.equals(location, info.getCoordinates())) {
+                // Already exists, no need to add again
                 return;
             }
         }
-        agentMap.add(new LocationInfo(location.clone(), hasBreeze, hasStench));
-    }
+    
+        // Add new location information with corresponding sensor data
+        agentMap.add(new LocationInfo(location.clone(), hasBreeze, hasStench, hasPit, hasWumpus, hasGlitter, hasGold));
+    }    
 
     private static Boolean checkAgentMap(int[] location){
         for (LocationInfo info : agentMap){
@@ -1080,4 +1199,73 @@ public class WumpusWorld {
             System.out.println("No coordinates found for category: " + category);
         }
     }
+
+    public static String checkChamberStatus(int x, int y) {
+        // Check if the chamber is within bounds
+        if (x < 1 || x > GRID_SIZE_X || y < 1 || y > GRID_SIZE_Y) {
+            return "Invalid chamber coordinates.";
+        }
+    
+        // Check if the chamber has been visited or has known information
+        for (LocationInfo info : agentMap) {
+            if (Arrays.equals(info.getCoordinates(), new int[]{x, y})) {
+                if (info.hasBreeze()) {
+                    return "Breeze detected at (" + x + "," + y + "). Probability of Pit: " + calculatePitProbability(x, y);
+                } else if (info.hasStench()) {
+                    return "Stench detected at (" + x + "," + y + "). Probability of Wumpus: " + calculateWumpusProbability(x, y);
+                } else {
+                    return "SAFE. No Wumpus, no Pit at (" + x + "," + y + ").";
+                }
+            }
+        }
+    
+        // If no information is available, return UNKNOWN
+        return "UNKNOWN. No information about chamber (" + x + "," + y + ").";
+    }
+    
+    public static double calculatePitProbability(int x, int y) {
+        // Check if the current room has a breeze (meaning adjacent rooms could have pits)
+        if (sensor_Breeze(new int[]{x, y})) {
+            ArrayList<int[]> adjacentRooms = getAdjacentRooms(x, y);
+            int possiblePitLocations = adjacentRooms.size();  // Adjacent rooms are the possible pit locations
+            
+            // Each adjacent room should share equal probability of having the pit
+            return possiblePitLocations > 0 ? 1.0 / possiblePitLocations : 0.0;
+        } else if (sensor_Pit(new int[]{x, y})) {
+            return 1;
+        } else {
+            // No breeze means no pit in adjacent rooms
+            return 0.0;
+        }
+    }
+    
+    
+    public static double calculateWumpusProbability(int x, int y) {
+        // Check if the current room has a stench (meaning adjacent rooms could have the Wumpus)
+        if (sensor_Stench(new int[]{x, y})) {
+            ArrayList<int[]> adjacentRooms = getAdjacentRooms(x, y);
+            int possibleWumpusLocations = adjacentRooms.size();  // Adjacent rooms are the possible Wumpus locations
+            
+            // Each adjacent room should share equal probability of having the Wumpus
+            return possibleWumpusLocations > 0 ? 1.0 / possibleWumpusLocations : 0.0;
+        } else if (sensor_Wumpus(new int[]{x, y})) {
+            return 1;
+        } else {
+            // No stench means no Wumpus in adjacent rooms
+            return 0.0;
+        }
+    }
+    
+    public static ArrayList<int[]> getAdjacentRooms(int x, int y) {
+        ArrayList<int[]> adjacentRooms = new ArrayList<>();
+    
+        if (x > 1) adjacentRooms.add(new int[]{x - 1, y});  // Up
+        if (x < GRID_SIZE_X) adjacentRooms.add(new int[]{x + 1, y});  // Down
+        if (y > 1) adjacentRooms.add(new int[]{x, y - 1});  // Left
+        if (y < GRID_SIZE_Y) adjacentRooms.add(new int[]{x, y + 1});  // Right
+    
+        return adjacentRooms;
+    }
+    
+
 }

@@ -1,0 +1,57 @@
+### Wumpus World State ###
+Agent's Current Position: (4, 1)
+Movements Made: 4
+Agent State: Dead
+World Won: false
+
+### Grid State ###
+((1,1))	((1,2) [B])	((1,3) [S])	((1,4) [W])	
+((2,1) [B])	((2,2) [P])	((2,3) [B,B])	((2,4) [S])	
+((3,1) [B])	((3,2) [B,B])	((3,3) [P])	((3,4) [B])	
+((4,1) [P,A])	((4,2) [B])	((4,3) [G,Gl,B])	((4,4))	
+
+### Agent Knowledge ###
+
+Movement Number: 0
+Location: (1, 1)
+ |-- Breeze: false
+ |-- Stench: false
+ |-- Pit: false
+ |-- Wumpus: false
+ |-- Glitter: false
+ |-- Gold: false
+Probability of Pit: 0.00
+Probability of Wumpus: 0.00
+
+Movement Number: 1
+Location: (2, 1)
+ |-- Breeze: true
+ |-- Stench: false
+ |-- Pit: false
+ |-- Wumpus: false
+ |-- Glitter: false
+ |-- Gold: false
+Probability of Pit: 0.33
+Probability of Wumpus: 0.00
+
+Movement Number: 2
+Location: (3, 1)
+ |-- Breeze: true
+ |-- Stench: false
+ |-- Pit: false
+ |-- Wumpus: false
+ |-- Glitter: false
+ |-- Gold: false
+Probability of Pit: 0.33
+Probability of Wumpus: 0.00
+
+Movement Number: 3
+Location: (4, 1)
+ |-- Breeze: false
+ |-- Stench: false
+ |-- Pit: true
+ |-- Wumpus: false
+ |-- Glitter: false
+ |-- Gold: false
+Probability of Pit: 1.00
+Probability of Wumpus: 0.00

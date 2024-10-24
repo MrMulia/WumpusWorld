@@ -10,45 +10,10 @@ Knowledge Rule: Breeze => Pit nearby
 Knowledge Rule: No Stench => No Wumpus nearby
 Knowledge Rule: Breeze => Pit nearby
 Knowledge Rule: No Stench => No Wumpus nearby
-MOVE up (1,1)
-Knowledge Rule: No Breeze => No Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-Knowledge Rule: No Breeze => No Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-MOVE right (1,2) S
-Knowledge Rule: No Breeze => No Pit nearby
-Knowledge Rule: Stench => Wumpus nearby
-Knowledge Rule: No Breeze => No Pit nearby
-Knowledge Rule: Stench => Wumpus nearby
-MOVE down (2,2)
-Knowledge Rule: No Breeze => No Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-Knowledge Rule: No Breeze => No Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-MOVE down (3,2) B
+MOVE down (3,1) B
 Knowledge Rule: Breeze => Pit nearby
 Knowledge Rule: No Stench => No Wumpus nearby
 Knowledge Rule: Breeze => Pit nearby
 Knowledge Rule: No Stench => No Wumpus nearby
-MOVE down (4,2)
-Knowledge Rule: No Breeze => No Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-Knowledge Rule: No Breeze => No Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-MOVE left (4,1) B
-Knowledge Rule: Breeze => Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-Knowledge Rule: Breeze => Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-MOVE right (4,2)
-Knowledge Rule: No Breeze => No Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-Knowledge Rule: No Breeze => No Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-MOVE right (4,3) B
-Knowledge Rule: Breeze => Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-Knowledge Rule: Breeze => Pit nearby
-Knowledge Rule: No Stench => No Wumpus nearby
-MOVE right (4,4) P
+MOVE down (4,1) P
 DEAD
