@@ -1,14 +1,14 @@
 ### Wumpus World State ###
-Agent's Current Position: (4, 1)
-Movements Made: 4
+Agent's Current Position: (2, 2)
+Movements Made: 9
 Agent State: Dead
 World Won: false
 
 ### Grid State ###
 ((1,1))	((1,2) [B])	((1,3) [S])	((1,4) [W])	
-((2,1) [B])	((2,2) [P])	((2,3) [B,B])	((2,4) [S])	
+((2,1) [B])	((2,2) [P,A])	((2,3) [B,B])	((2,4) [S])	
 ((3,1) [B])	((3,2) [B,B])	((3,3) [P])	((3,4) [B])	
-((4,1) [P,A])	((4,2) [B])	((4,3) [G,Gl,B])	((4,4))	
+((4,1) [P])	((4,2) [B])	((4,3) [G,Gl,B])	((4,4))	
 
 ### Agent Knowledge ###
 
@@ -24,29 +24,67 @@ Probability of Pit: 0.00
 Probability of Wumpus: 0.00
 
 Movement Number: 1
-Location: (2, 1)
+Location: (1, 2)
  |-- Breeze: true
  |-- Stench: false
  |-- Pit: false
  |-- Wumpus: false
  |-- Glitter: false
  |-- Gold: false
+Logical Conclusion: Breeze => Pit nearby.
 Probability of Pit: 0.33
 Probability of Wumpus: 0.00
 
 Movement Number: 2
-Location: (3, 1)
+Location: (1, 3)
+ |-- Breeze: false
+ |-- Stench: true
+ |-- Pit: false
+ |-- Wumpus: false
+ |-- Glitter: false
+ |-- Gold: false
+Logical Conclusion: Stench => Wumpus nearby.
+Probability of Pit: 0.00
+Probability of Wumpus: 0.33
+
+Movement Number: 3
+Location: (2, 3)
  |-- Breeze: true
  |-- Stench: false
  |-- Pit: false
  |-- Wumpus: false
  |-- Glitter: false
  |-- Gold: false
+Logical Conclusion: Breeze => Pit nearby.
+Probability of Pit: 0.25
+Probability of Wumpus: 0.00
+
+Movement Number: 4
+Location: (2, 4)
+ |-- Breeze: false
+ |-- Stench: true
+ |-- Pit: false
+ |-- Wumpus: false
+ |-- Glitter: false
+ |-- Gold: false
+Logical Conclusion: Stench => Wumpus nearby.
+Probability of Pit: 0.00
+Probability of Wumpus: 0.33
+
+Movement Number: 5
+Location: (3, 4)
+ |-- Breeze: true
+ |-- Stench: false
+ |-- Pit: false
+ |-- Wumpus: false
+ |-- Glitter: false
+ |-- Gold: false
+Logical Conclusion: Breeze => Pit nearby.
 Probability of Pit: 0.33
 Probability of Wumpus: 0.00
 
-Movement Number: 3
-Location: (4, 1)
+Movement Number: 6
+Location: (2, 2)
  |-- Breeze: false
  |-- Stench: false
  |-- Pit: true

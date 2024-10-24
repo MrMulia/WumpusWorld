@@ -273,6 +273,12 @@ public class WumpusWorld {
                 writer.write("\nMovement Number: " + move + "\n");
                 writer.write(info.toString());
                 int[] loc = info.getCoordinates();
+                if (info.hasBreeze()) {
+                    writer.write("Logical Conclusion: Breeze => Pit nearby.\n");
+                }
+                if (info.hasStench()) {
+                    writer.write("Logical Conclusion: Stench => Wumpus nearby.\n");
+                }
                 writer.write("Probability of Pit: " + String.format( "%.2f", calculatePitProbability(loc[0], loc[1])) + "\n");
                 writer.write("Probability of Wumpus: " + String.format( "%.2f", calculateWumpusProbability(loc[0], loc[1])) + "\n");
                 move++;
