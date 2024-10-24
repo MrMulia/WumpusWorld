@@ -20,7 +20,7 @@ Problem Statement:
 
 The Wumpus world is a cave with 16 rooms (4×4). Each room is connected to others through walkways (no rooms are connected diagonally). The knowledge-based agent starts from Room[1, 1]. The cave has – some pits, a treasure, and a beast named Wumpus. The Wumpus cannot move but eats the one who enters its room. If the agent enters the pit, it gets stuck there. The goal of the agent is to take the treasure and come out of the cave. The agent is rewarded when the goal conditions are met. The agent is penalized when it falls into a pit or is eaten by the Wumpus.
     
-Some elements support the agent in exploring the cave, like:
+Elements that support the agent:
 - The rooms adjacent to the Wumpus' room give out a stench.
 - The agent is given one arrow which it can use to kill the Wumpus when facing it (Wumpus screams when it is killed).
 - The rooms adjacent to the pits' rooms let out a breeze.
